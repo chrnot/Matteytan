@@ -142,7 +142,9 @@ const SumsView = () => {
     };
 
     const roll = (times: number) => {
-        const newData = [...data];
+        // Deep copy the data to ensure Recharts detects the state change
+        const newData = data.map(item => ({ ...item }));
+        
         let finalRoll: number[] = [];
         for (let t = 0; t < times; t++) {
             let currentRolls = [];
@@ -184,7 +186,7 @@ const SumsView = () => {
                  </div>
                  <div className="flex-1 w-full min-h-[150px]">
                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                        <BarChart key={diceCount} data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                             <XAxis dataKey="sum" tick={{fontSize: 10}} />
                             <YAxis tick={{fontSize: 10}} allowDecimals={false} />
                             <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} labelStyle={{ fontWeight: 'bold', color: '#475569' }} />
