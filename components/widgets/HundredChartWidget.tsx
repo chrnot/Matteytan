@@ -136,23 +136,23 @@ export const HundredChartWidget: React.FC<HundredChartWidgetProps> = ({ isTransp
   const maskSum = maskedIndices.reduce((sum, idx) => sum + (idx + 1), 0);
 
   return (
-    <div className="w-[500px] flex flex-col gap-3">
+    <div className="w-full max-w-[500px] flex flex-col gap-3">
         
         {/* TOP TAB BAR */}
         <div className="flex bg-slate-100 p-1 rounded-xl mx-auto border border-slate-200 mb-1">
-            <button onClick={() => setMode('PAINT')} className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${mode === 'PAINT' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
-                <Icons.Bead size={14} /> Måla
+            <button onClick={() => setMode('PAINT')} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${mode === 'PAINT' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+                <Icons.Bead size={14} /> <span className="hidden sm:inline">Måla</span>
             </button>
-            <button onClick={() => setMode('HIDE')} className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${mode === 'HIDE' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
-                <Icons.Minimize size={14} /> Gömma
+            <button onClick={() => setMode('HIDE')} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${mode === 'HIDE' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+                <Icons.Minimize size={14} /> <span className="hidden sm:inline">Gömma</span>
             </button>
-            <button onClick={() => setMode('MASK')} className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${mode === 'MASK' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
-                <Icons.Grid size={14} /> Mask
+            <button onClick={() => setMode('MASK')} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${mode === 'MASK' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+                <Icons.Grid size={14} /> <span className="hidden sm:inline">Mask</span>
             </button>
         </div>
 
         {/* CONTROLS BAR (Context sensitive) */}
-        <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 min-h-[52px] flex items-center justify-between">
+        <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 min-h-[52px] flex flex-wrap items-center justify-between gap-2">
             
             {/* PAINT CONTROLS */}
             {mode === 'PAINT' && (
@@ -162,7 +162,7 @@ export const HundredChartWidget: React.FC<HundredChartWidgetProps> = ({ isTransp
                             <button 
                                 key={i}
                                 onClick={() => setActiveColor(i)}
-                                className={`w-6 h-6 rounded-full border-2 transition-transform ${activeColor === i ? 'scale-110 border-slate-600' : 'border-transparent hover:scale-105'}`}
+                                className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 transition-transform ${activeColor === i ? 'scale-110 border-slate-600' : 'border-transparent hover:scale-105'}`}
                                 style={{ backgroundColor: c.hex }}
                             />
                         ))}
@@ -180,10 +180,10 @@ export const HundredChartWidget: React.FC<HundredChartWidgetProps> = ({ isTransp
             {/* HIDE CONTROLS */}
             {mode === 'HIDE' && (
                 <div className="flex w-full justify-between items-center">
-                    <span className="text-xs font-bold text-slate-400 uppercase">Detektiven</span>
-                    <div className="flex gap-2">
+                    <span className="text-xs font-bold text-slate-400 uppercase hidden sm:inline">Detektiven</span>
+                    <div className="flex gap-2 w-full justify-center sm:w-auto">
                         <button onClick={hideAll} className="px-3 py-1 bg-slate-800 text-white rounded text-xs font-bold shadow-sm hover:bg-slate-700">Göm Alla</button>
-                        <button onClick={randomReveal} className="px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded text-xs font-bold shadow-sm hover:bg-slate-50">Visa 5 st</button>
+                        <button onClick={randomReveal} className="px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded text-xs font-bold shadow-sm hover:bg-slate-50">Visa 5</button>
                         <button onClick={showAll} className="px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded text-xs font-bold shadow-sm hover:bg-slate-50">Visa Alla</button>
                     </div>
                 </div>
@@ -191,7 +191,7 @@ export const HundredChartWidget: React.FC<HundredChartWidgetProps> = ({ isTransp
 
             {/* MASK CONTROLS */}
             {mode === 'MASK' && (
-                <div className="flex w-full justify-between items-center px-1">
+                <div className="flex w-full flex-wrap justify-between items-center px-1 gap-2">
                     <div className="flex gap-1">
                         <button onClick={() => setActiveMask('SQUARE')} className={`px-2 py-1 text-[10px] font-bold border rounded ${activeMask==='SQUARE' ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-white'}`}>Kvadrat</button>
                         <button onClick={() => setActiveMask('CROSS')} className={`px-2 py-1 text-[10px] font-bold border rounded ${activeMask==='CROSS' ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-white'}`}>Kors</button>
@@ -207,13 +207,13 @@ export const HundredChartWidget: React.FC<HundredChartWidgetProps> = ({ isTransp
         </div>
 
         {/* GRID */}
-        <div className="grid grid-cols-10 gap-1 bg-slate-200 p-2 rounded-xl shadow-inner select-none">
+        <div className="grid grid-cols-10 gap-0.5 sm:gap-1 bg-slate-200 p-1 sm:p-2 rounded-xl shadow-inner select-none">
             {cells.map((cell, i) => {
                 const num = i + 1;
                 const isMasked = mode === 'MASK' && maskedIndices.includes(i);
                 
                 // Base styles
-                let cellClasses = "aspect-square flex items-center justify-center rounded text-sm font-bold border transition-all duration-150 cursor-pointer";
+                let cellClasses = "aspect-square flex items-center justify-center rounded-sm sm:rounded text-xs sm:text-sm font-bold border transition-all duration-150 cursor-pointer";
                 
                 // Color logic
                 if (cell.color && !cell.hidden) {
@@ -226,7 +226,7 @@ export const HundredChartWidget: React.FC<HundredChartWidgetProps> = ({ isTransp
 
                 // Mask logic (Overlays)
                 if (isMasked) {
-                    cellClasses += " ring-4 ring-blue-500 z-10 scale-105 shadow-lg";
+                    cellClasses += " ring-2 sm:ring-4 ring-blue-500 z-10 scale-105 shadow-lg";
                 } else if (mode === 'MASK') {
                     cellClasses += " opacity-50"; // Dim others
                 }
@@ -247,7 +247,7 @@ export const HundredChartWidget: React.FC<HundredChartWidgetProps> = ({ isTransp
         <div className="text-center text-[10px] text-slate-400">
             {mode === 'PAINT' && "Klicka för att måla. Klicka igen för att sudda."}
             {mode === 'HIDE' && "Klicka på en ruta för att gömma eller visa talet."}
-            {mode === 'MASK' && "Klicka på rutan där du vill placera masken. Flytta den för att se hur summan ändras."}
+            {mode === 'MASK' && "Klicka på rutan där du vill placera masken."}
         </div>
     </div>
   );

@@ -81,6 +81,9 @@ export const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
     if (isDragging) {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
+      // Touch support for dragging logic would need Touch Events here,
+      // but for now mouse logic covers desktop/laptop well. 
+      // Mobile often handles touches as mouse events but dragging can be tricky with scrolling.
     }
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
@@ -110,7 +113,7 @@ export const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
           const deltaY = e.clientY - resizeStart.current.y;
           
           setSize({
-              width: Math.max(300, resizeStart.current.w + deltaX),
+              width: Math.max(280, resizeStart.current.w + deltaX),
               height: Math.max(200, resizeStart.current.h + deltaY)
           });
       };
@@ -131,9 +134,10 @@ export const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
 
 
   // Dynamic classes
+  // ADDED: max-w and max-h to prevent widgets from being larger than viewport on mobile
   const containerClasses = transparent 
-    ? "fixed flex flex-col rounded-xl overflow-visible transition-shadow duration-300"
-    : "fixed flex flex-col bg-white rounded-xl widget-shadow border border-slate-200 overflow-hidden transition-shadow duration-300";
+    ? "fixed flex flex-col rounded-xl overflow-visible transition-shadow duration-300 max-w-[98vw] max-h-[90vh]"
+    : "fixed flex flex-col bg-white rounded-xl widget-shadow border border-slate-200 overflow-hidden transition-shadow duration-300 max-w-[98vw] max-h-[90vh]";
 
   return (
     <div
@@ -190,7 +194,7 @@ export const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
       {/* Content Area */}
       <div className={`
         flex-1 relative
-        ${transparent ? 'p-0 bg-transparent' : 'p-4 bg-white/95 backdrop-blur-sm overflow-auto'}
+        ${transparent ? 'p-0 bg-transparent' : 'p-2 sm:p-4 bg-white/95 backdrop-blur-sm overflow-auto'}
       `}>
         {/* We pass a style to force children to adapt if they use percentages */}
         <div className="h-full w-full">

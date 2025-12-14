@@ -26,15 +26,15 @@ const PercentagePanel: React.FC<{
     const isSimplified = simpDen !== 100;
 
     return (
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center gap-3 w-full sm:w-auto">
              <div className="text-sm font-bold text-slate-500 uppercase tracking-wide">{label}</div>
              
              {/* 10x10 Grid */}
-             <div className="grid grid-cols-10 gap-1 p-2 bg-slate-100 rounded-lg border border-slate-200">
+             <div className="grid grid-cols-10 gap-0.5 sm:gap-1 p-2 bg-slate-100 rounded-lg border border-slate-200">
                 {Array.from({ length: 100 }).map((_, i) => (
                     <div 
                         key={i} 
-                        className={`w-3 h-3 sm:w-4 sm:h-4 rounded-sm transition-colors duration-200 ${i < value ? color : 'bg-slate-200'}`}
+                        className={`w-2.5 h-2.5 sm:w-4 sm:h-4 rounded-[1px] sm:rounded-sm transition-colors duration-200 ${i < value ? color : 'bg-slate-200'}`}
                     ></div>
                 ))}
              </div>
@@ -77,8 +77,8 @@ export const PercentageWidget: React.FC<PercentageWidgetProps> = ({ isTransparen
   };
 
   return (
-    <div className="w-full max-w-[650px] min-w-[500px]">
-      <div className="flex justify-center items-start gap-4 sm:gap-8">
+    <div className="w-full max-w-[650px] min-w-[300px]">
+      <div className="flex flex-col sm:flex-row justify-center items-center sm:items-start gap-4 sm:gap-8">
         
         {/* Panel A */}
         <PercentagePanel 
@@ -90,15 +90,15 @@ export const PercentageWidget: React.FC<PercentageWidgetProps> = ({ isTransparen
         />
 
         {/* Comparison Operator */}
-        <div className="self-center flex flex-col items-center gap-2 pt-10">
+        <div className="self-center flex flex-col items-center gap-2 pt-0 sm:pt-10">
             <div className={`
-                w-16 h-16 flex items-center justify-center rounded-2xl text-4xl font-black text-slate-700 shadow-md border-2 border-slate-200 bg-white
+                w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center rounded-2xl text-2xl sm:text-4xl font-black text-slate-700 shadow-md border-2 border-slate-200 bg-white
                 transition-all duration-300
                 ${valA === valB ? 'bg-green-50 border-green-300 text-green-600 scale-110' : ''}
             `}>
                 {getOperator()}
             </div>
-            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Jämför</div>
+            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider hidden sm:block">Jämför</div>
         </div>
 
         {/* Panel B */}
@@ -113,8 +113,8 @@ export const PercentageWidget: React.FC<PercentageWidgetProps> = ({ isTransparen
       </div>
       
       {!isTransparent && (
-        <div className="mt-6 pt-4 border-t border-slate-100 flex justify-center text-xs text-slate-400 text-center px-8">
-            Dra i reglagen för att fylla rutorna. Jämförelsetecknet uppdateras automatiskt.
+        <div className="mt-6 pt-4 border-t border-slate-100 flex justify-center text-xs text-slate-400 text-center px-4 sm:px-8">
+            Dra i reglagen för att fylla rutorna.
         </div>
       )}
     </div>

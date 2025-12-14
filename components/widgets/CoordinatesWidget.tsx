@@ -41,8 +41,12 @@ export const CoordinatesWidget: React.FC<CoordinatesWidgetProps> = ({ isTranspar
       const clickX = e.clientX - rect.left;
       const clickY = e.clientY - rect.top;
 
-      const x = toCoord(clickX, false);
-      const y = toCoord(clickY, true);
+      // Scale coords in case SVG is resized via CSS
+      const scaleX = CANVAS_SIZE / rect.width;
+      const scaleY = CANVAS_SIZE / rect.height;
+
+      const x = toCoord(clickX * scaleX, false);
+      const y = toCoord(clickY * scaleY, true);
 
       // Prevent duplicates
       if (points.some(p => p.x === x && p.y === y)) return;
@@ -51,11 +55,6 @@ export const CoordinatesWidget: React.FC<CoordinatesWidgetProps> = ({ isTranspar
       if (x < -10 || x > 10 || y < -10 || y > 10) return;
 
       const newPoint = { id: Date.now(), x, y };
-      
-      // If we already have 2 points, simplify by replacing the oldest one? 
-      // Or just add? User requested "add points". 
-      // But for "Straight line" we usually want just 2 points defining it.
-      // Let's allow multiple points, but calculate line based on the LAST two added.
       setPoints(prev => [...prev, newPoint]);
   };
 
@@ -87,7 +86,6 @@ export const CoordinatesWidget: React.FC<CoordinatesWidgetProps> = ({ isTranspar
       const m = p1.y - k * p1.x;
 
       // Calculate start and end pixels for drawing the infinite line across the viewbox
-      // We calculate y at x=-10 and x=10
       const startX = -10;
       const endX = 10;
       const startY = k * startX + m;
@@ -119,15 +117,16 @@ export const CoordinatesWidget: React.FC<CoordinatesWidgetProps> = ({ isTranspar
   }, [points]);
 
   return (
-    <div className={`transition-all ${isTransparent ? 'bg-white/90 rounded-lg p-2' : 'w-[600px] flex gap-4'}`}>
+    <div className={`transition-all ${isTransparent ? 'bg-white/90 rounded-lg p-2' : 'w-full max-w-3xl flex flex-col md:flex-row gap-4'}`}>
       
       {/* Canvas Area */}
-      <div className="relative">
+      <div className="relative flex justify-center">
           <svg 
             ref={svgRef}
-            width={CANVAS_SIZE} 
-            height={CANVAS_SIZE} 
-            className="bg-white border border-slate-300 rounded shadow-sm cursor-crosshair select-none"
+            viewBox={`0 0 ${CANVAS_SIZE} ${CANVAS_SIZE}`}
+            width="100%"
+            height="100%"
+            className="bg-white border border-slate-300 rounded shadow-sm cursor-crosshair select-none max-w-[360px] max-h-[360px]"
             onClick={handleSvgClick}
           >
               <defs>
@@ -189,7 +188,6 @@ export const CoordinatesWidget: React.FC<CoordinatesWidgetProps> = ({ isTranspar
                             strokeWidth="2"
                             className="transition-all hover:r-8"
                         />
-                        {/* Coordinate Label on hover or always? Let's do simple offset */}
                         <text 
                             x={toPx(p.x) + 8} 
                             y={toPx(p.y, true) - 8} 
@@ -214,9 +212,9 @@ export const CoordinatesWidget: React.FC<CoordinatesWidgetProps> = ({ isTranspar
           )}
       </div>
 
-      {/* Sidebar Controls (Hidden in transparent mode roughly, or optimized) */}
+      {/* Sidebar Controls */}
       {!isTransparent && (
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col min-w-[200px]">
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex-1 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="font-bold text-slate-700 flex items-center gap-2">
@@ -227,14 +225,13 @@ export const CoordinatesWidget: React.FC<CoordinatesWidgetProps> = ({ isTranspar
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[250px] scrollbar-thin">
+                <div className="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[150px] md:max-h-[250px] scrollbar-thin">
                     {points.length === 0 && (
-                        <div className="text-center text-slate-400 text-sm mt-10 italic">
+                        <div className="text-center text-slate-400 text-sm mt-4 italic">
                             Klicka i rutnätet för att sätta ut punkter.
                         </div>
                     )}
                     {[...points].reverse().map((p, i) => {
-                         // Check if this point is part of the line (last 2)
                          const originalIndex = points.length - 1 - i;
                          const isLinePoint = points.length >= 2 && originalIndex >= points.length - 2;
 
@@ -254,7 +251,6 @@ export const CoordinatesWidget: React.FC<CoordinatesWidgetProps> = ({ isTranspar
 
                 <div className="mt-4 pt-4 border-t border-slate-200 text-[10px] text-slate-500 leading-relaxed">
                     <p>Två punkter skapar automatiskt en linje.</p>
-                    <p className="mt-1">Linjen baseras alltid på de två <strong>senast</strong> tillagda punkterna.</p>
                 </div>
             </div>
           </div>

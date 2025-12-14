@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Toolbar } from './components/Toolbar';
 import { WidgetWrapper } from './components/WidgetWrapper';
 import { Logo } from './components/Logo';
@@ -29,18 +29,25 @@ const App: React.FC = () => {
   const [transparentWidgets, setTransparentWidgets] = useState<Record<string, boolean>>({});
 
   const getDefaultSize = (type: WidgetType) => {
+      const screenW = window.innerWidth;
+      const isMobile = screenW < 768;
+
+      // Helper to constrain width to screen size with some padding
+      const w = (desired: number) => Math.min(desired, screenW - 20);
+
       switch(type) {
-          case WidgetType.NUMBER_LINE: return { w: 800, h: 350 };
-          case WidgetType.COORDINATES: return { w: 650, h: 450 };
-          case WidgetType.PROBABILITY: return { w: 550, h: 600 };
-          case WidgetType.BASE_10: return { w: 850, h: 600 };
-          case WidgetType.PERCENTAGE: return { w: 700, h: 400 };
-          case WidgetType.NUMBER_BEADS: return { w: 650, h: 400 };
-          case WidgetType.FRACTION: return { w: 550, h: 300 };
-          case WidgetType.GEOMETRY: return { w: 500, h: 400 };
-          case WidgetType.EQUATION: return { w: 550, h: 500 };
-          case WidgetType.HUNDRED_CHART: return { w: 550, h: 650 };
-          default: return { w: 450, h: 400 };
+          case WidgetType.NUMBER_LINE: return { w: w(800), h: 350 };
+          case WidgetType.COORDINATES: return { w: w(650), h: isMobile ? 550 : 450 };
+          case WidgetType.PROBABILITY: return { w: w(550), h: 600 };
+          case WidgetType.BASE_10: return { w: w(850), h: 600 };
+          case WidgetType.PERCENTAGE: return { w: w(700), h: isMobile ? 550 : 400 };
+          case WidgetType.NUMBER_BEADS: return { w: w(650), h: 400 };
+          case WidgetType.FRACTION: return { w: w(550), h: isMobile ? 500 : 300 };
+          case WidgetType.GEOMETRY: return { w: w(500), h: 400 };
+          case WidgetType.EQUATION: return { w: w(550), h: 500 };
+          case WidgetType.HUNDRED_CHART: return { w: w(550), h: 650 };
+          case WidgetType.NUMBER_OF_DAY: return { w: w(450), h: isMobile ? 650 : 500 };
+          default: return { w: w(450), h: 400 };
       }
   };
 
@@ -49,8 +56,8 @@ const App: React.FC = () => {
     const newWidget: WidgetInstance = {
       id: `${type}-${Date.now()}`,
       type,
-      x: Math.max(50, window.innerWidth / 2 - size.w / 2 + (Math.random() * 40 - 20)),
-      y: Math.max(50, window.innerHeight / 2 - size.h / 2 + (Math.random() * 40 - 20)),
+      x: Math.max(10, window.innerWidth / 2 - size.w / 2 + (Math.random() * 20 - 10)),
+      y: Math.max(80, window.innerHeight / 2 - size.h / 2 + (Math.random() * 20 - 10)),
       width: size.w,
       height: size.h,
       zIndex: topZ + 1,
@@ -126,7 +133,7 @@ const App: React.FC = () => {
       case WidgetType.FORMULAS: return 'Formelsamling';
       case WidgetType.CALCULATOR: return 'Miniräknare';
       case WidgetType.PERCENTAGE: return 'Procent & Jämförelse';
-      case WidgetType.BASE_10: return 'Bas-klossar (Hundratal, Tiotal, Ental)';
+      case WidgetType.BASE_10: return 'Bas-klossar';
       case WidgetType.HUNDRED_CHART: return 'Hundrarutan';
       case WidgetType.NUMBER_HOUSE: return 'Tal-huset';
       case WidgetType.NUMBER_BEADS: return 'Pärlband (0-20)';
@@ -142,30 +149,30 @@ const App: React.FC = () => {
       <Logo darkMode={background === 'BLACK'} />
 
       {/* Floating Top Right Tools - Lower Z-index than widgets */}
-      <div className="absolute top-6 right-6 z-30 flex gap-2">
+      <div className="absolute top-6 right-6 z-30 flex flex-wrap justify-end gap-2 max-w-[50vw]">
          <button 
             onClick={() => addWidget(WidgetType.CALCULATOR)}
-            className="flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur rounded-full shadow-lg border border-slate-200 text-slate-700 hover:text-blue-600 hover:scale-105 active:scale-95 transition-all font-bold text-sm"
+            className="flex items-center gap-2 px-3 py-2 bg-white/90 backdrop-blur rounded-full shadow-lg border border-slate-200 text-slate-700 hover:text-blue-600 hover:scale-105 active:scale-95 transition-all font-bold text-xs sm:text-sm"
          >
-             <Icons.Math size={18} /> Räknare
+             <Icons.Math size={16} /> <span className="hidden sm:inline">Räknare</span>
          </button>
          <button 
             onClick={() => addWidget(WidgetType.SHAPES)}
-            className="flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur rounded-full shadow-lg border border-slate-200 text-slate-700 hover:text-blue-600 hover:scale-105 active:scale-95 transition-all font-bold text-sm"
+            className="flex items-center gap-2 px-3 py-2 bg-white/90 backdrop-blur rounded-full shadow-lg border border-slate-200 text-slate-700 hover:text-blue-600 hover:scale-105 active:scale-95 transition-all font-bold text-xs sm:text-sm"
          >
-             <Icons.Shapes size={18} /> Former
+             <Icons.Shapes size={16} /> <span className="hidden sm:inline">Former</span>
          </button>
          <button 
             onClick={() => addWidget(WidgetType.GEOMETRY)}
-            className="flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur rounded-full shadow-lg border border-slate-200 text-slate-700 hover:text-blue-600 hover:scale-105 active:scale-95 transition-all font-bold text-sm"
+            className="flex items-center gap-2 px-3 py-2 bg-white/90 backdrop-blur rounded-full shadow-lg border border-slate-200 text-slate-700 hover:text-blue-600 hover:scale-105 active:scale-95 transition-all font-bold text-xs sm:text-sm"
          >
-             <Icons.Ruler size={18} /> Mätning
+             <Icons.Ruler size={16} /> <span className="hidden sm:inline">Mätning</span>
          </button>
          <button 
             onClick={() => addWidget(WidgetType.FORMULAS)}
-            className="flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur rounded-full shadow-lg border border-slate-200 text-slate-700 hover:text-blue-600 hover:scale-105 active:scale-95 transition-all font-bold text-sm"
+            className="flex items-center gap-2 px-3 py-2 bg-white/90 backdrop-blur rounded-full shadow-lg border border-slate-200 text-slate-700 hover:text-blue-600 hover:scale-105 active:scale-95 transition-all font-bold text-xs sm:text-sm"
          >
-             <Icons.Book size={18} /> Formler
+             <Icons.Book size={16} /> <span className="hidden sm:inline">Formler</span>
          </button>
       </div>
 
@@ -191,9 +198,9 @@ const App: React.FC = () => {
 
       {/* Intro Text if Empty */}
       {widgets.length === 0 && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none opacity-40">
-              <h1 className={`text-6xl font-bold tracking-tight mb-4 ${background === 'BLACK' ? 'text-white' : 'text-slate-900'}`}>Matteytan</h1>
-              <p className={`text-xl ${background === 'BLACK' ? 'text-slate-400' : 'text-slate-500'}`}>Välj ett verktyg nedan för att starta lektionen</p>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none opacity-40 px-4">
+              <h1 className={`text-4xl sm:text-6xl font-bold tracking-tight mb-4 ${background === 'BLACK' ? 'text-white' : 'text-slate-900'}`}>Matteytan</h1>
+              <p className={`text-lg sm:text-xl ${background === 'BLACK' ? 'text-slate-400' : 'text-slate-500'}`}>Välj ett verktyg nedan för att starta lektionen</p>
           </div>
       )}
 

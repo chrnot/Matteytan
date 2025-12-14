@@ -77,7 +77,7 @@ export const ShapesWidget: React.FC<ShapesWidgetProps> = ({ isTransparent, setTr
     <div className="w-full h-full flex flex-col gap-4">
         
         {/* Shape Selectors */}
-        <div className="flex justify-center bg-slate-100 p-1 rounded-xl gap-1 shrink-0">
+        <div className="flex justify-center flex-wrap bg-slate-100 p-1 rounded-xl gap-1 shrink-0">
             <button onClick={() => {setShape('SQUARE'); setHeight(width);}} className={`p-2 rounded-lg transition-all ${shape === 'SQUARE' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`} title="Kvadrat">
                 <div className="w-4 h-4 border-2 border-current rounded-sm"></div>
             </button>
@@ -139,11 +139,11 @@ export const ShapesWidget: React.FC<ShapesWidgetProps> = ({ isTransparent, setTr
         </div>
 
         {/* Controls - Shrink */}
-        <div className="flex gap-4 shrink-0">
-             <button onClick={randomize} className="flex-1 py-3 bg-slate-800 text-white rounded-xl font-bold shadow-lg hover:bg-slate-700 active:scale-95 transition-all flex items-center justify-center gap-2">
+        <div className="flex flex-col sm:flex-row gap-4 shrink-0">
+             <button onClick={randomize} className="flex-1 py-3 bg-slate-800 text-white rounded-xl font-bold shadow-lg hover:bg-slate-700 active:scale-95 transition-all flex items-center justify-center gap-2 text-sm sm:text-base">
                 <Icons.Reset size={18} className={animate ? 'animate-spin' : ''} /> SLUMPA MÅTT
             </button>
-             <button onClick={() => setShowAnswer(!showAnswer)} className={`flex-1 py-3 border-2 rounded-xl font-bold transition-all ${showAnswer ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
+             <button onClick={() => setShowAnswer(!showAnswer)} className={`flex-1 py-3 border-2 rounded-xl font-bold transition-all text-sm sm:text-base ${showAnswer ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
                 {showAnswer ? 'Dölj Facit' : 'Visa Facit'}
             </button>
         </div>
@@ -153,11 +153,11 @@ export const ShapesWidget: React.FC<ShapesWidgetProps> = ({ isTransparent, setTr
             <div className="flex gap-4 animate-in slide-in-from-top-2 shrink-0">
                 <div className="flex-1 bg-blue-100 p-2 rounded-lg text-center border border-blue-200">
                     <div className="text-[10px] font-bold text-blue-600 uppercase">Area</div>
-                    <div className="text-xl font-bold text-blue-900">{stats.area} <span className="text-sm font-normal text-blue-600/70">ae</span></div>
+                    <div className="text-lg sm:text-xl font-bold text-blue-900">{stats.area} <span className="text-sm font-normal text-blue-600/70">ae</span></div>
                 </div>
                 <div className="flex-1 bg-emerald-100 p-2 rounded-lg text-center border border-emerald-200">
                     <div className="text-[10px] font-bold text-emerald-600 uppercase">Omkrets</div>
-                    <div className="text-xl font-bold text-emerald-900">{stats.perim} <span className="text-sm font-normal text-emerald-600/70">le</span></div>
+                    <div className="text-lg sm:text-xl font-bold text-emerald-900">{stats.perim} <span className="text-sm font-normal text-emerald-600/70">le</span></div>
                 </div>
             </div>
         )}

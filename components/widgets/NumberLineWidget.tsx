@@ -35,13 +35,13 @@ export const NumberLineWidget: React.FC<NumberLineWidgetProps> = ({ isTransparen
   };
 
   return (
-    <div className="w-[750px] flex flex-col gap-2">
+    <div className="w-full flex flex-col gap-2 min-w-[300px]">
       {/* Controls */}
-      <div className="flex flex-wrap gap-4 items-center bg-slate-50 p-2 rounded-lg border border-slate-200">
+      <div className="flex flex-wrap gap-2 items-center bg-slate-50 p-2 rounded-lg border border-slate-200">
         
         {/* Range Controls */}
-        <div className="flex items-center gap-2 border-r pr-4 border-slate-300">
-            <span className="text-xs text-slate-500 font-bold">Intervall:</span>
+        <div className="flex items-center gap-1 border-r pr-2 border-slate-300">
+            <span className="text-[10px] sm:text-xs text-slate-500 font-bold hidden sm:inline">Intervall:</span>
             <input 
                 type="number" 
                 value={range.min} 
@@ -58,7 +58,7 @@ export const NumberLineWidget: React.FC<NumberLineWidgetProps> = ({ isTransparen
         </div>
 
         {/* Zoom Control */}
-        <div className="flex items-center gap-2 border-r pr-4 border-slate-300">
+        <div className="flex items-center gap-1 border-r pr-2 border-slate-300 hidden sm:flex">
              <span className="text-xs text-slate-500 font-bold">Zoom:</span>
              <input 
                 type="range" 
@@ -67,12 +67,12 @@ export const NumberLineWidget: React.FC<NumberLineWidgetProps> = ({ isTransparen
                 step="0.1" 
                 value={scale}
                 onChange={(e) => setScale(Number(e.target.value))}
-                className="w-20 accent-blue-600"
+                className="w-16 accent-blue-600"
              />
         </div>
 
         {/* Jump Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
             <div className="flex flex-col">
                 <span className="text-[9px] font-bold text-slate-400 uppercase">Steg:</span>
                 <input 
@@ -80,27 +80,27 @@ export const NumberLineWidget: React.FC<NumberLineWidgetProps> = ({ isTransparen
                     min="1" 
                     value={stepSize} 
                     onChange={(e) => setStepSize(Math.max(1, Number(e.target.value)))}
-                    className="w-12 border rounded px-1 text-sm font-bold text-center"
+                    className="w-10 border rounded px-1 text-sm font-bold text-center"
                 />
             </div>
 
             <div className="flex gap-1 h-full items-end">
-                <button onClick={() => addJump('left')} className="flex items-center gap-1 text-xs bg-white border shadow-sm px-3 py-1.5 rounded hover:bg-slate-50 text-slate-700 font-medium">
-                    <Icons.Minimize size={12} /> Hoppa Vänster
+                <button onClick={() => addJump('left')} className="flex items-center gap-1 text-xs bg-white border shadow-sm px-2 py-1.5 rounded hover:bg-slate-50 text-slate-700 font-medium">
+                    <Icons.Minimize size={12} /> <span className="hidden sm:inline">Vänster</span>
                 </button>
-                <button onClick={() => addJump('right')} className="flex items-center gap-1 text-xs bg-white border shadow-sm px-3 py-1.5 rounded hover:bg-slate-50 text-slate-700 font-medium">
-                    <Icons.Plus size={12} /> Hoppa Höger
+                <button onClick={() => addJump('right')} className="flex items-center gap-1 text-xs bg-white border shadow-sm px-2 py-1.5 rounded hover:bg-slate-50 text-slate-700 font-medium">
+                    <Icons.Plus size={12} /> <span className="hidden sm:inline">Höger</span>
                 </button>
             </div>
             
-             <button onClick={clearJumps} className="flex items-center gap-1 text-xs bg-red-50 text-red-600 border border-red-100 px-3 py-1.5 rounded hover:bg-red-100 ml-2 h-full self-end">
+             <button onClick={clearJumps} className="flex items-center gap-1 text-xs bg-red-50 text-red-600 border border-red-100 px-3 py-1.5 rounded hover:bg-red-100 ml-auto h-full self-end">
                 <Icons.Trash size={14} />
             </button>
         </div>
       </div>
 
       {/* Scrollable Area */}
-      <div className="overflow-x-auto pb-4 border rounded-xl bg-white relative h-[300px] select-none shadow-inner scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
+      <div className="overflow-x-auto pb-4 border rounded-xl bg-white relative h-[300px] select-none shadow-inner scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100 w-full">
         <svg width={Math.max(totalWidth, 730)} height="100%">
           {/* Main Line */}
           <line x1="0" y1={LINE_Y} x2={Math.max(totalWidth, 730)} y2={LINE_Y} stroke="#334155" strokeWidth="2" />
@@ -144,9 +144,6 @@ export const NumberLineWidget: React.FC<NumberLineWidgetProps> = ({ isTransparen
             const direction = jump.end > jump.start ? 1 : -1;
             
             // Stack Height Calculation
-            // We check how many *previous* jumps cover the exact same interval (ignoring direction)
-            // This ensures +5 and -5 on the same spot stack on top of each other.
-            
             const currentMin = Math.min(jump.start, jump.end);
             const currentMax = Math.max(jump.start, jump.end);
             
@@ -157,9 +154,8 @@ export const NumberLineWidget: React.FC<NumberLineWidgetProps> = ({ isTransparen
                 return currentMin === otherMin && currentMax === otherMax;
             }).length;
 
-            // Base height logic + Stacking offset
             const baseHeight = Math.min(Math.abs(x2 - x1) * 0.5, 80);
-            const height = baseHeight + (overlapCount * 30); // Add 30px for each overlap
+            const height = baseHeight + (overlapCount * 30);
 
             return (
               <g key={jump.id}>
@@ -172,7 +168,6 @@ export const NumberLineWidget: React.FC<NumberLineWidgetProps> = ({ isTransparen
                     markerEnd={`url(#arrowhead-${direction > 0 ? 'green' : 'red'})`}
                     className="drop-shadow-sm"
                 />
-                {/* Label Background for readability */}
                 <rect 
                     x={midX - 12} 
                     y={LINE_Y - height - 14} 
