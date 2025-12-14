@@ -14,6 +14,7 @@ export enum WidgetType {
   NUMBER_HOUSE = 'NUMBER_HOUSE',
   NUMBER_BEADS = 'NUMBER_BEADS',
   SHAPES = 'SHAPES',
+  FRACTION_BARS = 'FRACTION_BARS',
 }
 
 export interface WidgetInstance {

@@ -22,7 +22,8 @@ import {
   Grid3X3, 
   Home, 
   Circle, 
-  Shapes 
+  Shapes,
+  StretchHorizontal
 } from 'lucide-react';
 
 export const Icons = {
@@ -49,5 +50,6 @@ export const Icons = {
   Grid: Grid3X3,
   Home,
   Bead: Circle,
-  Shapes
+  Shapes,
+  Bars: StretchHorizontal
 };

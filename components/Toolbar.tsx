@@ -15,10 +15,10 @@ const WIDGET_BUTTONS = [
   { type: WidgetType.NUMBER_HOUSE, icon: Icons.Home, label: 'Tal-huset' },
   { type: WidgetType.NUMBER_LINE, icon: Icons.More, label: 'Tallinje' },
   { type: WidgetType.FRACTION, icon: Icons.Fraction, label: 'Bråk' },
+  { type: WidgetType.FRACTION_BARS, icon: Icons.Bars, label: 'Bråkstavar' },
   { type: WidgetType.PERCENTAGE, icon: Icons.Percent, label: 'Procent' },
   { type: WidgetType.COORDINATES, icon: Icons.Graph, label: 'Koordinater' },
   { type: WidgetType.PROBABILITY, icon: Icons.Dice, label: 'Sannolikhet' },
-  { type: WidgetType.NUMBER_OF_DAY, icon: Icons.Calendar, label: 'Dagens Tal' },
   { type: WidgetType.EQUATION, icon: Icons.Scale, label: 'Ekvation' },
 ];
 

@@ -18,6 +18,7 @@ import { HundredChartWidget } from './components/widgets/HundredChartWidget';
 import { NumberHouseWidget } from './components/widgets/NumberHouseWidget';
 import { NumberBeadsWidget } from './components/widgets/NumberBeadsWidget';
 import { ShapesWidget } from './components/widgets/ShapesWidget';
+import { FractionBarsWidget } from './components/widgets/FractionBarsWidget';
 import { Icons } from './components/icons';
 
 const App: React.FC = () => {
@@ -47,6 +48,7 @@ const App: React.FC = () => {
           case WidgetType.EQUATION: return { w: w(550), h: 500 };
           case WidgetType.HUNDRED_CHART: return { w: w(550), h: 650 };
           case WidgetType.NUMBER_OF_DAY: return { w: w(450), h: isMobile ? 650 : 500 };
+          case WidgetType.FRACTION_BARS: return { w: w(700), h: 500 };
           default: return { w: w(450), h: 400 };
       }
   };
@@ -117,6 +119,7 @@ const App: React.FC = () => {
       case WidgetType.NUMBER_HOUSE: return <NumberHouseWidget {...props} />;
       case WidgetType.NUMBER_BEADS: return <NumberBeadsWidget {...props} />;
       case WidgetType.SHAPES: return <ShapesWidget {...props} />;
+      case WidgetType.FRACTION_BARS: return <FractionBarsWidget {...props} />;
       default: return null;
     }
   };
@@ -125,7 +128,7 @@ const App: React.FC = () => {
       switch (type) {
       case WidgetType.NUMBER_LINE: return 'Interaktiv Tallinje';
       case WidgetType.GEOMETRY: return 'Mätning';
-      case WidgetType.FRACTION: return 'Bråktals-byggare';
+      case WidgetType.FRACTION: return 'Jämför Bråk';
       case WidgetType.COORDINATES: return 'Koordinatsystem';
       case WidgetType.PROBABILITY: return 'Sannolikhets-labb';
       case WidgetType.NUMBER_OF_DAY: return 'Dagens Tal';
@@ -138,6 +141,7 @@ const App: React.FC = () => {
       case WidgetType.NUMBER_HOUSE: return 'Tal-huset';
       case WidgetType.NUMBER_BEADS: return 'Pärlband (0-20)';
       case WidgetType.SHAPES: return 'Former & Geometri';
+      case WidgetType.FRACTION_BARS: return 'Bråkstavarna';
       default: return 'Widget';
     }
   };
@@ -150,6 +154,13 @@ const App: React.FC = () => {
 
       {/* Floating Top Right Tools - Lower Z-index than widgets */}
       <div className="absolute top-6 right-6 z-30 flex flex-wrap justify-end gap-2 max-w-[50vw]">
+         <button 
+            onClick={() => addWidget(WidgetType.NUMBER_OF_DAY)}
+            className="flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-full shadow-lg border border-transparent hover:scale-105 active:scale-95 transition-all font-bold text-xs sm:text-sm mr-2"
+         >
+             <Icons.Calendar size={16} /> <span className="hidden sm:inline">Dagens Tal</span>
+         </button>
+
          <button 
             onClick={() => addWidget(WidgetType.CALCULATOR)}
             className="flex items-center gap-2 px-3 py-2 bg-white/90 backdrop-blur rounded-full shadow-lg border border-slate-200 text-slate-700 hover:text-blue-600 hover:scale-105 active:scale-95 transition-all font-bold text-xs sm:text-sm"
