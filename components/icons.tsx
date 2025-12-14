@@ -12,17 +12,17 @@ import {
   Dices, 
   Calendar, 
   Scale, 
-  BookOpen,
-  Trash2,
-  RefreshCw,
-  MoreHorizontal,
-  Maximize,
-  Percent,
-  Box,
-  Grid3X3,
-  Home,
-  Circle,
-  Shapes
+  BookOpen, 
+  Trash2, 
+  RefreshCw, 
+  MoreHorizontal, 
+  Maximize, 
+  Percent, 
+  Box, 
+  Grid3X3, 
+  Home, 
+  Circle, 
+  Shapes 
 } from 'lucide-react';
 
 export const Icons = {

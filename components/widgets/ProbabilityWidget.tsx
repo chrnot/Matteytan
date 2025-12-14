@@ -19,6 +19,10 @@ const SockIcon = ({ color, className }: { color: string, className?: string }) =
     </svg>
 );
 
+const DiceFace: React.FC<{ val: number }> = ({ val }) => (
+    <div className="w-10 h-10 bg-white border border-slate-300 rounded-lg shadow-sm flex items-center justify-center font-bold text-xl text-slate-800">{val}</div>
+);
+
 // --- SUB-COMPONENT: URNAN ---
 const UrnView = () => {
     const [config, setConfig] = useState({ red: 2, blue: 2, green: 0 });
@@ -156,10 +160,6 @@ const SumsView = () => {
         setData(newData);
         setTotalRolls(prev => prev + times);
     };
-
-    const DiceFace = ({ val }: { val: number }) => (
-        <div className="w-10 h-10 bg-white border border-slate-300 rounded-lg shadow-sm flex items-center justify-center font-bold text-xl text-slate-800">{val}</div>
-    );
 
     return (
         <div className="flex flex-col h-full gap-4">
