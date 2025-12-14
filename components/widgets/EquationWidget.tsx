@@ -209,7 +209,8 @@ export const EquationWidget: React.FC<EquationWidgetProps> = ({ isTransparent })
       const massR = calcMass(itemsR);
       const diff = massL - massR;
       
-      setIsBalanced(diff === 0);
+      // Use epsilon for float comparison safety
+      setIsBalanced(Math.abs(diff) < 0.001);
       
       // Max tilt 15 degrees
       const targetTilt = Math.max(-15, Math.min(15, diff * 2));
@@ -292,10 +293,10 @@ export const EquationWidget: React.FC<EquationWidgetProps> = ({ isTransparent })
       {/* 3. MAIN VISUALIZATION AREA */}
       <div className="flex-1 bg-gradient-to-b from-blue-50 to-white rounded-xl border border-slate-200 relative overflow-hidden flex flex-col items-center justify-end shadow-inner">
            
-           {/* Status Indicator (Floating Top) */}
-           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 w-full flex justify-center pointer-events-none">
+           {/* Status Indicator (Floating Top) - HIGH Z-INDEX TO SHOW ABOVE BEAM */}
+           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 w-full flex justify-center pointer-events-none">
                {isBalanced ? (
-                   <div className="bg-green-500 border-2 border-green-400 text-white px-6 py-3 rounded-xl shadow-xl animate-in zoom-in slide-in-from-bottom-4 flex flex-col items-center">
+                   <div className="bg-green-500 border-2 border-green-400 text-white px-6 py-3 rounded-xl shadow-xl animate-in zoom-in slide-in-from-bottom-4 flex flex-col items-center pointer-events-auto">
                        <div className="flex items-center gap-2 mb-1">
                             <Icons.Scale size={20} className="stroke-[3px]" />
                             <span className="font-black uppercase tracking-widest text-sm">BALANS!</span>
@@ -305,7 +306,7 @@ export const EquationWidget: React.FC<EquationWidgetProps> = ({ isTransparent })
                        </div>
                    </div>
                ) : (
-                   <div className="bg-white/80 backdrop-blur border border-red-200 text-red-500 px-4 py-1.5 rounded-full shadow-sm flex items-center gap-2">
+                   <div className="bg-white/80 backdrop-blur border border-red-200 text-red-500 px-4 py-1.5 rounded-full shadow-sm flex items-center gap-2 pointer-events-auto">
                        <Icons.Close size={16} />
                        <span className="font-bold text-xs uppercase tracking-wider">Obalans</span>
                    </div>
