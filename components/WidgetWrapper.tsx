@@ -41,22 +41,34 @@ export const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   // --- DRAGGING LOGIC ---
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.stopPropagation(); 
+  
+  const startDrag = (clientX: number, clientY: number) => {
     onFocus(id);
     setIsDragging(true);
     dragStart.current = {
-      x: e.clientX - position.x,
-      y: e.clientY - position.y,
+      x: clientX - position.x,
+      y: clientY - position.y,
     };
   };
 
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation(); 
+    startDrag(e.clientX, e.clientY);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    // Prevent scrolling when starting to drag header
+    // e.preventDefault(); // Note: calling preventDefault on start might block click events on buttons, handle carefully
+    const touch = e.touches[0];
+    startDrag(touch.clientX, touch.clientY);
+  };
+
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging) {
+    const handleMove = (clientX: number, clientY: number) => {
         // Boundary Checks
-        let newY = e.clientY - dragStart.current.y;
-        let newX = e.clientX - dragStart.current.x;
+        let newY = clientY - dragStart.current.y;
+        let newX = clientX - dragStart.current.x;
 
         // Prevent going off top screen
         if (newY < 0) newY = 0;
@@ -68,10 +80,24 @@ export const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
         if (newX > window.innerWidth - 50) newX = window.innerWidth - 50;
 
         setPosition({ x: newX, y: newY });
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        e.preventDefault();
+        handleMove(e.clientX, e.clientY);
       }
     };
 
-    const handleMouseUp = () => {
+    const handleTouchMove = (e: TouchEvent) => {
+      if (isDragging) {
+        e.preventDefault(); // Stop scrolling while dragging widget
+        const touch = e.touches[0];
+        handleMove(touch.clientX, touch.clientY);
+      }
+    };
+
+    const handleEnd = () => {
       if (isDragging) {
         setIsDragging(false);
         onMove(id, position.x, position.y);
@@ -80,37 +106,49 @@ export const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
 
     if (isDragging) {
       window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-      // Touch support for dragging logic would need Touch Events here,
-      // but for now mouse logic covers desktop/laptop well. 
-      // Mobile often handles touches as mouse events but dragging can be tricky with scrolling.
+      window.addEventListener('mouseup', handleEnd);
+      window.addEventListener('touchmove', handleTouchMove, { passive: false });
+      window.addEventListener('touchend', handleEnd);
     }
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('mouseup', handleEnd);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleEnd);
     };
   }, [isDragging, id, onMove, position.x, position.y, size.width]);
 
 
   // --- RESIZING LOGIC ---
-  const handleResizeDown = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      e.preventDefault();
+  
+  const startResize = (clientX: number, clientY: number) => {
       onFocus(id);
       setIsResizing(true);
       resizeStart.current = { 
-          x: e.clientX, 
-          y: e.clientY, 
+          x: clientX, 
+          y: clientY, 
           w: size.width, 
           h: size.height 
       };
   };
 
+  const handleResizeMouseDown = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      startResize(e.clientX, e.clientY);
+  };
+
+  const handleResizeTouchStart = (e: React.TouchEvent) => {
+      e.stopPropagation();
+      // e.preventDefault(); 
+      const touch = e.touches[0];
+      startResize(touch.clientX, touch.clientY);
+  };
+
   useEffect(() => {
-      const handleResizeMove = (e: MouseEvent) => {
-          if (!isResizing) return;
-          const deltaX = e.clientX - resizeStart.current.x;
-          const deltaY = e.clientY - resizeStart.current.y;
+      const handleResizeMove = (clientX: number, clientY: number) => {
+          const deltaX = clientX - resizeStart.current.x;
+          const deltaY = clientY - resizeStart.current.y;
           
           setSize({
               width: Math.max(280, resizeStart.current.w + deltaX),
@@ -118,23 +156,39 @@ export const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
           });
       };
 
-      const handleResizeUp = () => {
+      const onMouseMove = (e: MouseEvent) => {
+          if (!isResizing) return;
+          e.preventDefault();
+          handleResizeMove(e.clientX, e.clientY);
+      };
+
+      const onTouchMove = (e: TouchEvent) => {
+          if (!isResizing) return;
+          e.preventDefault(); // Stop scrolling while resizing
+          const touch = e.touches[0];
+          handleResizeMove(touch.clientX, touch.clientY);
+      };
+
+      const onEnd = () => {
           setIsResizing(false);
       };
 
       if (isResizing) {
-          window.addEventListener('mousemove', handleResizeMove);
-          window.addEventListener('mouseup', handleResizeUp);
+          window.addEventListener('mousemove', onMouseMove);
+          window.addEventListener('mouseup', onEnd);
+          window.addEventListener('touchmove', onTouchMove, { passive: false });
+          window.addEventListener('touchend', onEnd);
       }
       return () => {
-          window.removeEventListener('mousemove', handleResizeMove);
-          window.removeEventListener('mouseup', handleResizeUp);
+          window.removeEventListener('mousemove', onMouseMove);
+          window.removeEventListener('mouseup', onEnd);
+          window.removeEventListener('touchmove', onTouchMove);
+          window.removeEventListener('touchend', onEnd);
       };
   }, [isResizing]);
 
 
   // Dynamic classes
-  // ADDED: max-w and max-h to prevent widgets from being larger than viewport on mobile
   const containerClasses = transparent 
     ? "fixed flex flex-col rounded-xl overflow-visible transition-shadow duration-300 max-w-[98vw] max-h-[90vh]"
     : "fixed flex flex-col bg-white rounded-xl widget-shadow border border-slate-200 overflow-hidden transition-shadow duration-300 max-w-[98vw] max-h-[90vh]";
@@ -149,24 +203,28 @@ export const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
         width: transparent ? 'auto' : size.width,
         height: transparent ? 'auto' : size.height,
         zIndex: zIndex,
+        touchAction: 'none' // Helps browser know we handle touches
       }}
       onMouseDown={() => onFocus(id)}
+      onTouchStart={() => onFocus(id)}
     >
       {/* Header */}
       {!transparent && (
         <div
-          className="h-10 bg-slate-50 border-b border-slate-200 flex items-center justify-between px-3 cursor-move select-none flex-shrink-0"
+          className="h-10 bg-slate-50 border-b border-slate-200 flex items-center justify-between px-3 cursor-move select-none flex-shrink-0 touch-none"
           onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
         >
-          <span className="font-semibold text-slate-700 text-sm flex items-center gap-2 truncate pr-4">
+          <span className="font-semibold text-slate-700 text-sm flex items-center gap-2 truncate pr-4 pointer-events-none">
             {title}
           </span>
           <div className="flex items-center gap-1">
             <button
               onClick={(e) => { e.stopPropagation(); onClose(id); }}
-              className="p-1 hover:bg-red-100 text-slate-400 hover:text-red-500 rounded transition-colors"
+              onTouchEnd={(e) => { e.stopPropagation(); onClose(id); }}
+              className="p-2 hover:bg-red-100 text-slate-400 hover:text-red-500 rounded transition-colors"
             >
-              <Icons.Close size={16} />
+              <Icons.Close size={18} />
             </button>
           </div>
         </div>
@@ -176,17 +234,18 @@ export const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
       {transparent && (
          <div className="absolute -top-10 left-0 flex gap-2 bg-white/90 backdrop-blur border border-slate-200 rounded-lg p-1 shadow-sm z-50">
             <div 
-                className="p-1.5 cursor-move text-slate-500 hover:bg-slate-100 rounded"
+                className="p-2 cursor-move text-slate-500 hover:bg-slate-100 rounded touch-none"
                 onMouseDown={handleMouseDown}
+                onTouchStart={handleTouchStart}
                 title="Flytta"
             >
-                <Icons.Move size={16} />
+                <Icons.Move size={20} />
             </div>
              <button
               onClick={(e) => { e.stopPropagation(); onClose(id); }}
-              className="p-1.5 hover:bg-red-100 text-slate-400 hover:text-red-500 rounded transition-colors"
+              className="p-2 hover:bg-red-100 text-slate-400 hover:text-red-500 rounded transition-colors"
             >
-              <Icons.Close size={16} />
+              <Icons.Close size={20} />
             </button>
          </div>
       )}
@@ -208,13 +267,14 @@ export const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
         </div>
       </div>
 
-      {/* Resize Handle (Bottom Right) */}
+      {/* Resize Handle (Bottom Right) - Made larger for touch */}
       {!transparent && (
           <div 
-            className="absolute bottom-0 right-0 w-6 h-6 cursor-nwse-resize z-20 flex items-end justify-end p-1 hover:bg-slate-100 rounded-tl"
-            onMouseDown={handleResizeDown}
+            className="absolute bottom-0 right-0 w-10 h-10 cursor-nwse-resize z-20 flex items-end justify-end p-1.5 hover:bg-slate-100 rounded-tl touch-none"
+            onMouseDown={handleResizeMouseDown}
+            onTouchStart={handleResizeTouchStart}
           >
-              <div className="w-0 h-0 border-b-[6px] border-r-[6px] border-l-[6px] border-t-[6px] border-b-slate-400 border-r-slate-400 border-l-transparent border-t-transparent opacity-50"></div>
+              <div className="w-0 h-0 border-b-[8px] border-r-[8px] border-l-[8px] border-t-[8px] border-b-slate-400 border-r-slate-400 border-l-transparent border-t-transparent opacity-50"></div>
           </div>
       )}
     </div>
