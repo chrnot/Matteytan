@@ -64,13 +64,15 @@ export const HundredChartWidget: React.FC<HundredChartWidgetProps> = ({ isTransp
   // --- PAINT UTILS ---
   const clearColors = () => setCells(prev => prev.map(c => ({ ...c, color: null })));
   
-  const paintPattern = (type: 'ODD' | 'EVEN' | 'FIVE' | 'TEN') => {
+  const paintPattern = (type: 'ODD' | 'EVEN' | 'THREE' | 'FIVE' | 'SEVEN' | 'TEN') => {
       setCells(prev => prev.map((c, i) => {
           const num = i + 1;
           let match = false;
           if (type === 'ODD') match = num % 2 !== 0;
           if (type === 'EVEN') match = num % 2 === 0;
+          if (type === 'THREE') match = num % 3 === 0;
           if (type === 'FIVE') match = num % 5 === 0;
+          if (type === 'SEVEN') match = num % 7 === 0;
           if (type === 'TEN') match = num % 10 === 0;
           
           return { ...c, color: match ? COLORS[activeColor].bg : null };
@@ -169,10 +171,12 @@ export const HundredChartWidget: React.FC<HundredChartWidgetProps> = ({ isTransp
                         <div className="w-[1px] h-6 bg-slate-300 mx-1"></div>
                         <button onClick={clearColors} className="p-1 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded" title="Rensa färger"><Icons.Trash size={16}/></button>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 flex-wrap">
                         <button onClick={() => paintPattern('ODD')} className="px-2 py-1 text-[10px] font-bold bg-white border rounded hover:bg-slate-100 text-slate-600">Udda</button>
                         <button onClick={() => paintPattern('EVEN')} className="px-2 py-1 text-[10px] font-bold bg-white border rounded hover:bg-slate-100 text-slate-600">Jämna</button>
+                        <button onClick={() => paintPattern('THREE')} className="px-2 py-1 text-[10px] font-bold bg-white border rounded hover:bg-slate-100 text-slate-600">3-hopp</button>
                         <button onClick={() => paintPattern('FIVE')} className="px-2 py-1 text-[10px] font-bold bg-white border rounded hover:bg-slate-100 text-slate-600">5-hopp</button>
+                        <button onClick={() => paintPattern('SEVEN')} className="px-2 py-1 text-[10px] font-bold bg-white border rounded hover:bg-slate-100 text-slate-600">7-hopp</button>
                     </div>
                 </>
             )}
