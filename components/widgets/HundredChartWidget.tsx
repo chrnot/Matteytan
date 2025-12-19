@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Icons } from '../icons';
 
 interface HundredChartWidgetProps {
@@ -35,6 +35,15 @@ export const HundredChartWidget: React.FC<HundredChartWidgetProps> = ({ isTransp
   const [activeMask, setActiveMask] = useState<MaskShape>('SQUARE');
   const [maskAnchor, setMaskAnchor] = useState<number>(12); // Index of top-left or center of mask
 
+  // --- SMART MODE SWITCHING ---
+  // When switching modes, we might want to clean up specific things
+  useEffect(() => {
+    if (mode === 'MASK') {
+      // Mask requires a clean slate to not confuse the summation
+      setCells(prev => prev.map(c => ({ color: null, hidden: false })));
+    }
+  }, [mode]);
+
   // --- ACTIONS ---
 
   const handleCellClick = (index: number) => {
@@ -59,6 +68,11 @@ export const HundredChartWidget: React.FC<HundredChartWidgetProps> = ({ isTransp
       } else if (mode === 'MASK') {
           setMaskAnchor(index);
       }
+  };
+
+  const globalReset = () => {
+    setCells(new Array(100).fill({ color: null, hidden: false }));
+    setMaskAnchor(12);
   };
 
   // --- PAINT UTILS ---
@@ -109,22 +123,20 @@ export const HundredChartWidget: React.FC<HundredChartWidgetProps> = ({ isTransp
       };
 
       if (shape === 'SQUARE') {
-          // 2x2 Square
           add(0,0); add(0,1);
           add(1,0); add(1,1);
       } else if (shape === 'CROSS') {
-          // Plus sign
-          add(0,1); // Top
-          add(1,0); add(1,1); add(1,2); // Middle
-          add(2,1); // Bottom
+          add(0,1);
+          add(1,0); add(1,1); add(1,2);
+          add(2,1);
       } else if (shape === 'T_SHAPE') {
-          add(0,0); add(0,1); add(0,2); // Top bar
-          add(1,1); // Stem
+          add(0,0); add(0,1); add(0,2);
+          add(1,1);
           add(2,1);
       } else if (shape === 'L_SHAPE') {
           add(0,0); 
           add(1,0); 
-          add(2,0); add(2,1); // Bottom
+          add(2,0); add(2,1);
       }
 
       return indices;
@@ -141,7 +153,7 @@ export const HundredChartWidget: React.FC<HundredChartWidgetProps> = ({ isTransp
     <div className="w-full max-w-[500px] flex flex-col gap-3">
         
         {/* TOP TAB BAR */}
-        <div className="flex bg-slate-100 p-1 rounded-xl mx-auto border border-slate-200 mb-1">
+        <div className="flex bg-slate-100 p-1 rounded-xl mx-auto border border-slate-200 mb-1 relative">
             <button onClick={() => setMode('PAINT')} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${mode === 'PAINT' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
                 <Icons.Bead size={14} /> <span className="hidden sm:inline">Måla</span>
             </button>
@@ -150,6 +162,10 @@ export const HundredChartWidget: React.FC<HundredChartWidgetProps> = ({ isTransp
             </button>
             <button onClick={() => setMode('MASK')} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${mode === 'MASK' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
                 <Icons.Grid size={14} /> <span className="hidden sm:inline">Mask</span>
+            </button>
+            <div className="w-px h-6 bg-slate-300 mx-2 self-center"></div>
+            <button onClick={globalReset} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Nollställ allt">
+              <Icons.Trash size={16} />
             </button>
         </div>
 
@@ -176,7 +192,7 @@ export const HundredChartWidget: React.FC<HundredChartWidgetProps> = ({ isTransp
                         <button onClick={() => paintPattern('EVEN')} className="px-2 py-1 text-[10px] font-bold bg-white border rounded hover:bg-slate-100 text-slate-600">Jämna</button>
                         <button onClick={() => paintPattern('THREE')} className="px-2 py-1 text-[10px] font-bold bg-white border rounded hover:bg-slate-100 text-slate-600">3-hopp</button>
                         <button onClick={() => paintPattern('FIVE')} className="px-2 py-1 text-[10px] font-bold bg-white border rounded hover:bg-slate-100 text-slate-600">5-hopp</button>
-                        <button onClick={() => paintPattern('SEVEN')} className="px-2 py-1 text-[10px] font-bold bg-white border rounded hover:bg-slate-100 text-slate-600">7-hopp</button>
+                        <button onClick={() => paintPattern('TEN')} className="px-2 py-1 text-[10px] font-bold bg-white border rounded hover:bg-slate-100 text-slate-600">10-hopp</button>
                     </div>
                 </>
             )}
@@ -219,10 +235,14 @@ export const HundredChartWidget: React.FC<HundredChartWidgetProps> = ({ isTransp
                 // Base styles
                 let cellClasses = "aspect-square flex items-center justify-center rounded-sm sm:rounded text-xs sm:text-sm font-bold border transition-all duration-150 cursor-pointer";
                 
+                // Special handling per mode
+                const shouldHide = mode === 'HIDE' && cell.hidden;
+                const showNumber = mode === 'PAINT' || !shouldHide;
+
                 // Color logic
-                if (cell.color && !cell.hidden) {
+                if (cell.color && !shouldHide) {
                     cellClasses += ` ${cell.color} text-slate-800 border-transparent`;
-                } else if (cell.hidden) {
+                } else if (shouldHide) {
                     cellClasses += ` bg-slate-800 border-slate-900 text-transparent hover:bg-slate-700`;
                 } else {
                     cellClasses += ` bg-white text-slate-700 border-slate-300 hover:bg-slate-50`;
@@ -230,9 +250,9 @@ export const HundredChartWidget: React.FC<HundredChartWidgetProps> = ({ isTransp
 
                 // Mask logic (Overlays)
                 if (isMasked) {
-                    cellClasses += " ring-2 sm:ring-4 ring-blue-500 z-10 scale-105 shadow-lg";
+                    cellClasses += " ring-2 sm:ring-4 ring-blue-500 z-10 scale-105 shadow-lg !bg-white !text-blue-700 !border-transparent !opacity-100";
                 } else if (mode === 'MASK') {
-                    cellClasses += " opacity-50"; // Dim others
+                    cellClasses += " opacity-30 grayscale-[0.5]"; // Dim others in mask mode
                 }
 
                 return (
@@ -241,7 +261,7 @@ export const HundredChartWidget: React.FC<HundredChartWidgetProps> = ({ isTransp
                         onClick={() => handleCellClick(i)}
                         className={cellClasses}
                     >
-                        <span className={cell.hidden ? 'opacity-0' : 'opacity-100'}>{num}</span>
+                        <span className={shouldHide && !isMasked ? 'opacity-0' : 'opacity-100'}>{num}</span>
                     </div>
                 );
             })}
@@ -249,9 +269,9 @@ export const HundredChartWidget: React.FC<HundredChartWidgetProps> = ({ isTransp
         
         {/* Footer Info */}
         <div className="text-center text-[10px] text-slate-400">
-            {mode === 'PAINT' && "Klicka för att måla. Klicka igen för att sudda."}
-            {mode === 'HIDE' && "Klicka på en ruta för att gömma eller visa talet."}
-            {mode === 'MASK' && "Klicka på rutan där du vill placera masken."}
+            {mode === 'PAINT' && "Måla-läge: Gömda tal visas för redigering."}
+            {mode === 'HIDE' && "Gömma-läge: Klicka för att dölja tal."}
+            {mode === 'MASK' && "Mask-läge: Tavlan rensas för tydlighet."}
         </div>
     </div>
   );

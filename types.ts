@@ -1,6 +1,8 @@
+
 export enum WidgetType {
   NUMBER_LINE = 'NUMBER_LINE',
-  GEOMETRY = 'GEOMETRY',
+  RULER = 'RULER',
+  PROTRACTOR = 'PROTRACTOR',
   FRACTION = 'FRACTION',
   COORDINATES = 'COORDINATES',
   PROBABILITY = 'PROBABILITY',
@@ -15,6 +17,7 @@ export enum WidgetType {
   NUMBER_BEADS = 'NUMBER_BEADS',
   SHAPES = 'SHAPES',
   FRACTION_BARS = 'FRACTION_BARS',
+  MATH_WORKSHOP = 'MATH_WORKSHOP',
 }
 
 export interface WidgetInstance {

@@ -9,10 +9,10 @@ interface CalculatorWidgetProps {
 export const CalculatorWidget: React.FC<CalculatorWidgetProps> = ({ isTransparent, setTransparent }) => {
   const [input, setInput] = useState('');
   const [result, setResult] = useState('');
+  const [memory, setMemory] = useState<number>(0);
+  const [hasMemory, setHasMemory] = useState(false);
 
   const handleClick = (val: string) => {
-    // If we have a result and type an operator, continue with result
-    // If we have a result and type a number, start new
     if (result && !['+', '-', '×', '÷'].includes(val)) {
         setResult('');
         setInput(val);
@@ -37,88 +37,136 @@ export const CalculatorWidget: React.FC<CalculatorWidgetProps> = ({ isTransparen
     }
   };
 
-  const calculate = () => {
+  const calculate = (expr?: string) => {
     try {
-      if (!input) return;
+      const target = expr || input;
+      if (!target) return;
       
-      // Replace visual operators with JS operators
-      // Handle implicit multiplication for parens like "5(2)" -> "5*(2)" is tricky, 
-      // keeping it simple: user must type operators.
-      const expression = input
+      const expression = target
         .replace(/×/g, '*')
         .replace(/÷/g, '/');
       
-      // Safety check: allow only numbers and operators
       if (/[^0-9+\-*/().\s]/.test(expression)) {
           setResult('Fel');
           return;
       }
 
-      // eslint-disable-next-line no-new-func
       const res = new Function('"use strict";return (' + expression + ')')();
       
-      // Handle division by zero or other infinities
       if (!isFinite(res) || isNaN(res)) {
           setResult('Fel');
           return;
       }
 
-      // Handle precision issues loosely (e.g. 0.1 + 0.2)
       const formatted = Math.round(res * 10000000000) / 10000000000;
       setResult(formatted.toString());
+      return formatted;
     } catch (e) {
       setResult('Fel');
+      return null;
     }
   };
 
-  const buttons = [
-    { label: 'C', action: clear, cls: 'text-red-500 bg-red-50 hover:bg-red-100 font-bold' },
-    { label: '(', action: () => handleClick('('), cls: 'bg-slate-100 text-slate-600' },
-    { label: ')', action: () => handleClick(')'), cls: 'bg-slate-100 text-slate-600' },
-    { label: '÷', action: () => handleClick('÷'), cls: 'bg-blue-50 text-blue-600 font-medium text-xl' },
-    
-    { label: '7', action: () => handleClick('7') },
-    { label: '8', action: () => handleClick('8') },
-    { label: '9', action: () => handleClick('9') },
-    { label: '×', action: () => handleClick('×'), cls: 'bg-blue-50 text-blue-600 font-medium text-xl' },
-    
-    { label: '4', action: () => handleClick('4') },
-    { label: '5', action: () => handleClick('5') },
-    { label: '6', action: () => handleClick('6') },
-    { label: '-', action: () => handleClick('-'), cls: 'bg-blue-50 text-blue-600 font-medium text-xl' },
-    
-    { label: '1', action: () => handleClick('1') },
-    { label: '2', action: () => handleClick('2') },
-    { label: '3', action: () => handleClick('3') },
-    { label: '+', action: () => handleClick('+'), cls: 'bg-blue-50 text-blue-600 font-medium text-xl' },
-    
-    { label: '0', action: () => handleClick('0') },
-    { label: '.', action: () => handleClick('.') },
-    { label: '⌫', action: backspace, cls: 'text-slate-500 bg-slate-100' },
-    { label: '=', action: calculate, cls: 'bg-blue-600 text-white hover:bg-blue-700 font-bold text-xl' },
-  ];
+  const handleSqrt = () => {
+      const current = result || calculate();
+      if (current !== null && current !== undefined) {
+          const res = Math.sqrt(Number(current));
+          setResult(res.toString());
+          setInput(`√(${current})`);
+      }
+  };
+
+  const handleSquare = () => {
+      const current = result || calculate();
+      if (current !== null && current !== undefined) {
+          const res = Math.pow(Number(current), 2);
+          setResult(res.toString());
+          setInput(`(${current})²`);
+      }
+  };
+
+  const handleMemory = (type: 'MC' | 'MR' | 'M+' | 'M-') => {
+      const current = Number(result || calculate() || 0);
+      
+      switch(type) {
+          case 'MC':
+              setMemory(0);
+              setHasMemory(false);
+              break;
+          case 'MR':
+              if (hasMemory) {
+                  setInput(prev => prev + memory.toString());
+                  setResult('');
+              }
+              break;
+          case 'M+':
+              setMemory(prev => prev + current);
+              setHasMemory(true);
+              break;
+          case 'M-':
+              setMemory(prev => prev - current);
+              setHasMemory(true);
+              break;
+      }
+  };
 
   return (
-    <div className="w-[280px]">
-      {/* Display */}
-      <div className="bg-slate-800 p-4 rounded-xl mb-4 text-right shadow-inner border border-slate-700">
-        <div className="text-slate-400 text-xs h-5 overflow-hidden font-mono tracking-wider">{input || '0'}</div>
-        <div className="text-white text-3xl font-mono font-bold h-10 overflow-hidden tracking-wide">{result || (input ? '' : '')}</div>
+    <div className="w-full max-w-[340px] mx-auto select-none h-full flex flex-col">
+      {/* Modern Glass Display */}
+      <div className="bg-slate-900 p-4 rounded-2xl mb-4 text-right shadow-2xl border border-slate-800 relative overflow-hidden shrink-0">
+        <div className="absolute top-2 left-3 flex gap-1">
+            {hasMemory && <span className="text-[10px] font-black text-indigo-400 bg-indigo-900/50 px-1.5 py-0.5 rounded border border-indigo-500/30 animate-pulse">M</span>}
+        </div>
+        <div className="text-slate-500 text-xs h-5 overflow-hidden font-mono tracking-wider mb-1">
+            {input || '0'}
+        </div>
+        <div className="text-white text-4xl font-mono font-bold h-12 overflow-hidden tracking-tight truncate">
+            {result || (input ? '' : '0')}
+        </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-2">
-        {buttons.map((btn, i) => (
-          <button
-            key={i}
-            onClick={btn.action}
-            className={`
-              h-12 rounded-lg text-lg transition-all shadow-sm border border-slate-200/50 active:scale-95
-              ${btn.cls || 'bg-white hover:bg-slate-50 text-slate-700 font-medium'}
-            `}
-          >
-            {btn.label}
-          </button>
-        ))}
+      {/* Button Grid */}
+      <div className="grid grid-cols-4 gap-2 flex-1">
+        
+        {/* Memory Row */}
+        <button onClick={() => handleMemory('MC')} className="h-10 sm:h-12 rounded-xl text-[10px] font-bold bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all">MC</button>
+        <button onClick={() => handleMemory('MR')} className="h-10 sm:h-12 rounded-xl text-[10px] font-bold bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all">MR</button>
+        <button onClick={() => handleMemory('M+')} className="h-10 sm:h-12 rounded-xl text-[10px] font-bold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-all">M+</button>
+        <button onClick={() => handleMemory('M-')} className="h-10 sm:h-12 rounded-xl text-[10px] font-bold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-all">M-</button>
+
+        {/* Function Row */}
+        <button onClick={clear} className="h-12 sm:h-14 rounded-xl text-lg font-bold bg-red-50 text-red-500 hover:bg-red-100 transition-all">C</button>
+        <button onClick={handleSqrt} className="h-12 sm:h-14 rounded-xl text-lg font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all">√</button>
+        <button onClick={handleSquare} className="h-12 sm:h-14 rounded-xl text-lg font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all">x²</button>
+        <button onClick={() => handleClick('÷')} className="h-12 sm:h-14 rounded-xl text-2xl font-bold bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all">÷</button>
+
+        {/* Numbers & Basic Ops */}
+        <button onClick={() => handleClick('7')} className="h-14 sm:h-16 rounded-xl text-xl font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/50 shadow-sm transition-all">7</button>
+        <button onClick={() => handleClick('8')} className="h-14 sm:h-16 rounded-xl text-xl font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/50 shadow-sm transition-all">8</button>
+        <button onClick={() => handleClick('9')} className="h-14 sm:h-16 rounded-xl text-xl font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/50 shadow-sm transition-all">9</button>
+        <button onClick={() => handleClick('×')} className="h-14 sm:h-16 rounded-xl text-2xl font-bold bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all">×</button>
+
+        <button onClick={() => handleClick('4')} className="h-14 sm:h-16 rounded-xl text-xl font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/50 shadow-sm transition-all">4</button>
+        <button onClick={() => handleClick('5')} className="h-14 sm:h-16 rounded-xl text-xl font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/50 shadow-sm transition-all">5</button>
+        <button onClick={() => handleClick('6')} className="h-14 sm:h-16 rounded-xl text-xl font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/50 shadow-sm transition-all">6</button>
+        <button onClick={() => handleClick('-')} className="h-14 sm:h-16 rounded-xl text-2xl font-bold bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all">−</button>
+
+        <button onClick={() => handleClick('1')} className="h-14 sm:h-16 rounded-xl text-xl font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/50 shadow-sm transition-all">1</button>
+        <button onClick={() => handleClick('2')} className="h-14 sm:h-16 rounded-xl text-xl font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/50 shadow-sm transition-all">2</button>
+        <button onClick={() => handleClick('3')} className="h-14 sm:h-16 rounded-xl text-xl font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/50 shadow-sm transition-all">3</button>
+        <button onClick={() => handleClick('+')} className="h-14 sm:h-16 rounded-xl text-2xl font-bold bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all">+</button>
+
+        <button onClick={() => handleClick('0')} className="h-14 sm:h-16 rounded-xl text-xl font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/50 shadow-sm transition-all">0</button>
+        <button onClick={() => handleClick('.')} className="h-14 sm:h-16 rounded-xl text-xl font-bold bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/50 shadow-sm transition-all">,</button>
+        <button onClick={backspace} className="h-14 sm:h-16 rounded-xl text-xl font-bold bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all flex items-center justify-center">
+            <Icons.Close size={20} />
+        </button>
+        <button onClick={() => calculate()} className="h-14 sm:h-16 rounded-xl text-2xl font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">=</button>
+
+      </div>
+      
+      <div className="mt-4 pb-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center px-4 shrink-0">
+          Vetenskaplig räknare
       </div>
     </div>
   );

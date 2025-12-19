@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { Icons } from '../icons';
 
 interface NumberLineWidgetProps {
@@ -6,190 +7,307 @@ interface NumberLineWidgetProps {
   setTransparent?: (v: boolean) => void;
 }
 
+interface Jump {
+    start: number;
+    end: number;
+    label: string;
+    id: number;
+}
+
 export const NumberLineWidget: React.FC<NumberLineWidgetProps> = ({ isTransparent, setTransparent }) => {
   const [range, setRange] = useState({ min: -10, max: 20 });
-  const [scale, setScale] = useState(1); // Zoom scale
-  const [jumps, setJumps] = useState<{ start: number; end: number; id: number }[]>([]);
+  const [scale, setScale] = useState(1); 
+  const [jumps, setJumps] = useState<Jump[]>([]);
   const [stepSize, setStepSize] = useState(1);
+  const [expression, setExpression] = useState('');
+  const [error, setError] = useState('');
+  
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const totalUnits = range.max - range.min;
   const baseWidthPerUnit = 40; 
-  const widthPerUnit = baseWidthPerUnit * scale; // Scaled width
+  const widthPerUnit = baseWidthPerUnit * scale; 
   const totalWidth = totalUnits * widthPerUnit + 100;
   
-  // Adjusted vertical positions to fit stacked arcs
-  // Increased to allow more stacking
-  const LINE_Y = 220; 
+  const LINE_Y = 160; 
 
-  const addJump = (direction: 'left' | 'right') => {
-    const lastPos = jumps.length > 0 ? jumps[jumps.length - 1].end : 0;
-    const change = direction === 'right' ? stepSize : -stepSize;
-    const newJump = { start: lastPos, end: lastPos + change, id: Date.now() };
-    setJumps([...jumps, newJump]);
-  };
-
-  const clearJumps = () => setJumps([]);
-
+  // Helper to get X coordinate based on number value
   const getX = (val: number) => {
     return (val - range.min) * widthPerUnit + 50;
   };
 
-  return (
-    <div className="w-full flex flex-col gap-2 min-w-[300px]">
-      {/* Controls */}
-      <div className="flex flex-wrap gap-2 items-center bg-slate-50 p-2 rounded-lg border border-slate-200">
+  // Center the view on 0 when component mounts
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+        const zeroX = getX(0);
+        const containerWidth = scrollContainerRef.current.clientWidth;
+        // Small timeout to ensure layout is ready
+        setTimeout(() => {
+            if (scrollContainerRef.current) {
+                scrollContainerRef.current.scrollLeft = zeroX - containerWidth / 2;
+            }
+        }, 50);
+    }
+  }, []);
+
+  const addManualJump = (direction: 'left' | 'right') => {
+    const lastPos = jumps.length > 0 ? jumps[jumps.length - 1].end : 0;
+    const change = direction === 'right' ? stepSize : -stepSize;
+    const newJump: Jump = { 
+        start: lastPos, 
+        end: lastPos + change, 
+        label: direction === 'right' ? `+${stepSize}` : `-${stepSize}`,
+        id: Date.now() 
+    };
+    setJumps([...jumps, newJump]);
+    
+    // Auto-expand range if jump goes out of bounds
+    if (newJump.end > range.max) setRange(r => ({ ...r, max: Math.ceil(newJump.end + 5) }));
+    if (newJump.end < range.min) setRange(r => ({ ...r, min: Math.floor(newJump.end - 5) }));
+  };
+
+  const handleEvaluate = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    
+    if (!expression.trim()) return;
+
+    try {
+        let cleanExpr = expression.replace(/\s+/g, '');
         
-        {/* Range Controls */}
-        <div className="flex items-center gap-1 border-r pr-2 border-slate-300">
-            <span className="text-[10px] sm:text-xs text-slate-500 font-bold hidden sm:inline">Intervall:</span>
-            <input 
-                type="number" 
-                value={range.min} 
-                onChange={e => setRange(p => ({...p, min: Number(e.target.value)}))}
-                className="w-10 border rounded px-1 text-sm text-center"
-            />
-            <span className="text-slate-400">-</span>
-            <input 
-                type="number" 
-                value={range.max} 
-                onChange={e => setRange(p => ({...p, max: Number(e.target.value)}))}
-                className="w-10 border rounded px-1 text-sm text-center"
-            />
-        </div>
+        // Match numbers and operators
+        const regex = /(-?\d+)|([\+\-])/g;
+        const matches = cleanExpr.match(regex);
+        
+        if (!matches) throw new Error("Ogiltigt uttryck");
 
-        {/* Zoom Control */}
-        <div className="flex items-center gap-1 border-r pr-2 border-slate-300 hidden sm:flex">
-             <span className="text-xs text-slate-500 font-bold">Zoom:</span>
-             <input 
-                type="range" 
-                min="0.5" 
-                max="2.5" 
-                step="0.1" 
-                value={scale}
-                onChange={(e) => setScale(Number(e.target.value))}
-                className="w-16 accent-blue-600"
-             />
-        </div>
+        const newJumps: Jump[] = [];
+        let currentPos = 0;
+        
+        let i = 0;
+        let firstVal = parseInt(matches[0], 10);
+        
+        // Handle if first token is a sign
+        if (isNaN(firstVal)) {
+            const sign = matches[0];
+            const val = parseInt(matches[1], 10);
+            firstVal = sign === '-' ? -val : val;
+            i = 2;
+        } else {
+            i = 1;
+        }
 
-        {/* Jump Controls */}
-        <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex flex-col">
-                <span className="text-[9px] font-bold text-slate-400 uppercase">Steg:</span>
-                <input 
-                    type="number" 
-                    min="1" 
-                    value={stepSize} 
-                    onChange={(e) => setStepSize(Math.max(1, Number(e.target.value)))}
-                    className="w-10 border rounded px-1 text-sm font-bold text-center"
-                />
-            </div>
+        if (firstVal !== 0) {
+            newJumps.push({
+                start: 0,
+                end: firstVal,
+                label: firstVal > 0 ? `+${firstVal}` : firstVal.toString(),
+                id: Date.now()
+            });
+            currentPos = firstVal;
+        }
 
-            <div className="flex gap-1 h-full items-end">
-                <button onClick={() => addJump('left')} className="flex items-center gap-1 text-xs bg-white border shadow-sm px-2 py-1.5 rounded hover:bg-slate-50 text-slate-700 font-medium">
-                    <Icons.Minimize size={12} /> <span className="hidden sm:inline">Vänster</span>
-                </button>
-                <button onClick={() => addJump('right')} className="flex items-center gap-1 text-xs bg-white border shadow-sm px-2 py-1.5 rounded hover:bg-slate-50 text-slate-700 font-medium">
-                    <Icons.Plus size={12} /> <span className="hidden sm:inline">Höger</span>
-                </button>
-            </div>
+        for (; i < matches.length; i += 2) {
+            const operator = matches[i];
+            const nextValToken = matches[i + 1];
+            if (!nextValToken) break;
+
+            const val = parseInt(nextValToken, 10);
+            let jumpVal = (operator === '-') ? -val : val;
             
-             <button onClick={clearJumps} className="flex items-center gap-1 text-xs bg-red-50 text-red-600 border border-red-100 px-3 py-1.5 rounded hover:bg-red-100 ml-auto h-full self-end">
-                <Icons.Trash size={14} />
+            const nextPos = currentPos + jumpVal;
+            newJumps.push({
+                start: currentPos,
+                end: nextPos,
+                label: `${operator}${val}`,
+                id: Date.now() + i
+            });
+            currentPos = nextPos;
+        }
+
+        setJumps(newJumps);
+        
+        const allCoords = [0, ...newJumps.map(j => j.end), ...newJumps.map(j => j.start)];
+        const minCoord = Math.min(...allCoords);
+        const maxCoord = Math.max(...allCoords);
+        
+        setRange({
+            min: Math.min(range.min, Math.floor(minCoord - 5)),
+            max: Math.max(range.max, Math.ceil(maxCoord + 5))
+        });
+
+    } catch (err) {
+        setError("Kunde inte tolka. Skriv t.ex: 5 + 3 - 2");
+    }
+  };
+
+  const clearJumps = () => {
+    setJumps([]);
+    setExpression('');
+    setError('');
+  };
+
+  return (
+    <div className="w-full h-full flex flex-col gap-2 overflow-hidden bg-white">
+      
+      {/* Expression & Controls */}
+      <div className="flex flex-col gap-2 bg-slate-50 p-2 sm:p-3 rounded-xl border border-slate-200 shrink-0">
+        
+        <form onSubmit={handleEvaluate} className="flex gap-2 w-full">
+            <div className="relative flex-1">
+                <input 
+                    type="text"
+                    value={expression}
+                    onChange={(e) => setExpression(e.target.value)}
+                    placeholder="Skriv uttryck: 10 - 3 + 5"
+                    className={`w-full bg-white border ${error ? 'border-red-300 ring-1 ring-red-100' : 'border-slate-300'} rounded-lg px-3 py-1.5 font-mono font-bold text-slate-700 text-sm outline-none focus:border-blue-500 transition-all`}
+                />
+                {error && <div className="absolute -bottom-5 left-1 text-[9px] font-bold text-red-500">{error}</div>}
+            </div>
+            <button 
+                type="submit"
+                className="bg-blue-600 text-white px-4 py-1.5 rounded-lg font-bold hover:bg-blue-700 text-xs transition-all shadow-sm active:scale-95 whitespace-nowrap"
+            >
+                Visa Hopp
             </button>
+        </form>
+
+        <div className="flex flex-wrap gap-2 items-center justify-between">
+            <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Steg:</span>
+                    <input 
+                        type="number" 
+                        min="1" 
+                        value={stepSize} 
+                        onChange={(e) => setStepSize(Math.max(1, Number(e.target.value)))}
+                        className="w-10 border rounded px-1 text-xs font-bold text-center h-7"
+                    />
+                </div>
+                <div className="flex gap-1">
+                    <button onClick={() => addManualJump('left')} className="p-1.5 bg-white border rounded hover:bg-slate-50 text-slate-600 shadow-sm">
+                        <Icons.Minimize size={14} />
+                    </button>
+                    <button onClick={() => addManualJump('right')} className="p-1.5 bg-white border rounded hover:bg-slate-50 text-slate-600 shadow-sm">
+                        <Icons.Plus size={14} />
+                    </button>
+                </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+                 <div className="flex items-center gap-1 border-r pr-2 border-slate-200">
+                    <input 
+                        type="number" 
+                        value={range.min} 
+                        onChange={e => setRange(p => ({...p, min: Number(e.target.value)}))}
+                        className="w-12 border rounded px-1 text-xs text-center h-7 font-bold text-slate-500"
+                    />
+                    <span className="text-slate-300">...</span>
+                    <input 
+                        type="number" 
+                        value={range.max} 
+                        onChange={e => setRange(p => ({...p, max: Number(e.target.value)}))}
+                        className="w-12 border rounded px-1 text-xs text-center h-7 font-bold text-slate-500"
+                    />
+                </div>
+                <button onClick={clearJumps} className="p-1.5 text-red-500 hover:bg-red-50 rounded transition-colors" title="Rensa">
+                    <Icons.Trash size={16} />
+                </button>
+            </div>
         </div>
       </div>
 
-      {/* Scrollable Area */}
-      <div className="overflow-x-auto pb-4 border rounded-xl bg-white relative h-[300px] select-none shadow-inner scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100 w-full">
-        <svg width={Math.max(totalWidth, 730)} height="100%">
-          {/* Main Line */}
-          <line x1="0" y1={LINE_Y} x2={Math.max(totalWidth, 730)} y2={LINE_Y} stroke="#334155" strokeWidth="2" />
+      {/* Number Line Visualizer */}
+      <div 
+        ref={scrollContainerRef}
+        className="flex-1 overflow-x-auto border-2 border-slate-100 rounded-xl bg-slate-50/30 relative select-none scrollbar-thin w-full min-h-0"
+      >
+        <svg 
+            width={Math.max(totalWidth, 800)} 
+            height="100%" 
+            viewBox={`0 0 ${Math.max(totalWidth, 800)} 280`} 
+            preserveAspectRatio="xMinYMid meet" 
+            className="min-h-[250px]"
+        >
+          {/* Main Axis Line */}
+          <line x1="0" y1={LINE_Y} x2={Math.max(totalWidth, 800)} y2={LINE_Y} stroke="#334155" strokeWidth="2.5" />
           
-          {/* Ticks & Numbers */}
+          {/* Ticks & Labels */}
           {Array.from({ length: totalUnits + 1 }).map((_, i) => {
             const val = range.min + i;
             const x = getX(val);
             const isZero = val === 0;
+            const isMajor = val % 5 === 0;
+            
             return (
               <g key={val}>
                 <line 
-                    x1={x} y1={LINE_Y - 10} x2={x} y2={LINE_Y + 10} 
-                    stroke={isZero ? "#000" : "#64748b"} 
-                    strokeWidth={isZero ? 3 : 1} 
+                    x1={x} y1={LINE_Y - (isMajor ? 12 : 8)} x2={x} y2={LINE_Y + (isMajor ? 12 : 8)} 
+                    stroke={isZero ? "#000" : (isMajor ? "#475569" : "#cbd5e1")} 
+                    strokeWidth={isZero ? 3 : (isMajor ? 2 : 1)} 
                 />
-                <text 
-                    x={x} y={LINE_Y + 30} 
-                    textAnchor="middle" 
-                    fontSize={isZero ? 14 : 12} 
-                    fill={isZero ? '#000' : '#64748b'} 
-                    fontWeight={isZero ? 'bold' : 'normal'}
-                >
-                  {val}
-                </text>
-                {/* Minor Ticks */}
-                {scale > 1.2 && (
-                    <>
-                        <line x1={x + widthPerUnit * 0.5} y1={LINE_Y - 5} x2={x + widthPerUnit * 0.5} y2={LINE_Y + 5} stroke="#cbd5e1" strokeWidth="1" />
-                    </>
+                {(isMajor || isZero || Math.abs(val) < 5) && (
+                    <text 
+                        x={x} y={LINE_Y + 32} 
+                        textAnchor="middle" 
+                        fontSize={isZero ? 16 : 12} 
+                        fill={isZero ? '#000' : '#64748b'} 
+                        fontWeight={isZero || isMajor ? '800' : 'bold'}
+                        className="font-mono"
+                    >
+                    {val}
+                    </text>
                 )}
               </g>
             );
           })}
 
-          {/* Jumps */}
+          {/* Jump Paths - DASHED STYLE */}
           {jumps.map((jump, index) => {
             const x1 = getX(jump.start);
             const x2 = getX(jump.end);
             const midX = (x1 + x2) / 2;
-            const direction = jump.end > jump.start ? 1 : -1;
+            const diff = jump.end - jump.start;
+            const isPositive = diff > 0;
             
-            // Stack Height Calculation
-            const currentMin = Math.min(jump.start, jump.end);
-            const currentMax = Math.max(jump.start, jump.end);
-            
-            const overlapCount = jumps.filter((j, idx) => {
-                if (idx >= index) return false;
-                const otherMin = Math.min(j.start, j.end);
-                const otherMax = Math.max(j.start, j.end);
-                return currentMin === otherMin && currentMax === otherMax;
-            }).length;
-
             const baseHeight = Math.min(Math.abs(x2 - x1) * 0.5, 80);
-            const height = baseHeight + (overlapCount * 30);
+            const heightMultiplier = 1 + (index % 3) * 0.2;
+            const height = baseHeight * heightMultiplier;
 
             return (
-              <g key={jump.id}>
+              <g key={jump.id} className="animate-in fade-in zoom-in duration-500">
                 <path 
-                    d={`M ${x1} ${LINE_Y} Q ${midX} ${LINE_Y - height * 2} ${x2} ${LINE_Y}`} 
+                    d={`M ${x1} ${LINE_Y} Q ${midX} ${LINE_Y - height} ${x2} ${LINE_Y}`} 
                     fill="none" 
-                    stroke={direction > 0 ? "#10b981" : "#ef4444"} 
-                    strokeWidth="2"
-                    strokeDasharray="4 2"
-                    markerEnd={`url(#arrowhead-${direction > 0 ? 'green' : 'red'})`}
-                    className="drop-shadow-sm"
+                    stroke={isPositive ? "#10b981" : "#ef4444"} 
+                    strokeWidth="3"
+                    strokeDasharray="6,4"
+                    strokeLinecap="round"
+                    markerEnd={`url(#arrowhead-${isPositive ? 'green' : 'red'})`}
+                    className="transition-all"
                 />
-                <rect 
-                    x={midX - 12} 
-                    y={LINE_Y - height - 14} 
-                    width="24" 
-                    height="16" 
-                    fill="white" 
-                    opacity="0.8" 
-                    rx="4"
-                />
-                <text 
-                    x={midX} y={LINE_Y - height - 2} 
-                    textAnchor="middle" 
-                    fontSize="12" 
-                    fill={direction > 0 ? "#10b981" : "#ef4444"} 
-                    fontWeight="bold"
-                >
-                    {direction > 0 ? '+' : ''}{jump.end - jump.start}
-                </text>
+                <g transform={`translate(${midX}, ${LINE_Y - (height / 2) - 20})`}>
+                    <rect 
+                        x="-20" y="-10" width="40" height="20" rx="6" 
+                        fill="white" stroke={isPositive ? "#10b981" : "#ef4444"} strokeWidth="1.5"
+                        className="shadow-sm"
+                    />
+                    <text 
+                        textAnchor="middle" 
+                        y="4"
+                        fontSize="12" 
+                        fill={isPositive ? "#065f46" : "#991b1b"} 
+                        fontWeight="black"
+                        className="font-mono"
+                    >
+                        {jump.label}
+                    </text>
+                </g>
               </g>
             );
           })}
-           <defs>
+
+          <defs>
             <marker id="arrowhead-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
               <polygon points="0 0, 10 3.5, 0 7" fill="#10b981" />
             </marker>
@@ -198,6 +316,10 @@ export const NumberLineWidget: React.FC<NumberLineWidgetProps> = ({ isTransparen
             </marker>
           </defs>
         </svg>
+      </div>
+      
+      <div className="px-2 py-1 text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center shrink-0">
+          Tallinjen startar alltid på 0 • Dra i linjen för att se fler tal
       </div>
     </div>
   );

@@ -34,7 +34,9 @@ const PercentagePanel: React.FC<{
                 {Array.from({ length: 100 }).map((_, i) => (
                     <div 
                         key={i} 
-                        className={`w-2.5 h-2.5 sm:w-4 sm:h-4 rounded-[1px] sm:rounded-sm transition-colors duration-200 ${i < value ? color : 'bg-slate-200'}`}
+                        onClick={() => onChange(i + 1)}
+                        className={`w-2.5 h-2.5 sm:w-4 sm:h-4 rounded-[1px] sm:rounded-sm transition-all duration-200 cursor-pointer hover:ring-2 hover:ring-slate-400/50 hover:scale-110 active:scale-90 ${i < value ? color : 'bg-slate-200'}`}
+                        title={`${i + 1}%`}
                     ></div>
                 ))}
              </div>
@@ -113,8 +115,8 @@ export const PercentageWidget: React.FC<PercentageWidgetProps> = ({ isTransparen
       </div>
       
       {!isTransparent && (
-        <div className="mt-6 pt-4 border-t border-slate-100 flex justify-center text-xs text-slate-400 text-center px-4 sm:px-8">
-            Dra i reglagen för att fylla rutorna.
+        <div className="mt-6 pt-4 border-t border-slate-100 flex justify-center text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center px-4 sm:px-8">
+            Tips: Klicka direkt i rutorna för att snabbt välja ett värde.
         </div>
       )}
     </div>

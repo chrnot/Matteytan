@@ -10,12 +10,13 @@ type RangeLevel = 20 | 100 | 1000;
 
 export const NumberDayWidget: React.FC<NumberDayWidgetProps> = ({ isTransparent, setTransparent }) => {
   const [range, setRange] = useState<RangeLevel>(100);
-  const [number, setNumber] = useState<number>(24);
+  // Initialize with a random number based on the default range (100)
+  const [number, setNumber] = useState<number>(() => Math.floor(Math.random() * 100) + 1);
   const [visible, setVisible] = useState<Record<string, boolean>>({});
 
   // Clamp number when range changes
   useEffect(() => {
-    if (number > range) setNumber(Math.floor(Math.random() * range));
+    if (number > range) setNumber(Math.floor(Math.random() * range) + 1);
   }, [range]);
 
   const generateRandom = () => {

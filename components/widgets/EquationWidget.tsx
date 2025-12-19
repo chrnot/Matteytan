@@ -1,411 +1,258 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useMemo } from 'react';
 import { Icons } from '../icons';
 
-// --- TYPES ---
+type Side = 'VL' | 'HL';
+type Representation = 'BLOCKS' | 'MATCHSTICKS';
 
-type ItemType = 'X' | 'ONE' | 'NEG_ONE';
-
-interface EqItem {
-    id: string;
-    type: ItemType;
+interface EquationState {
+  vlX: number;
+  vlConst: number;
+  hlX: number;
+  hlConst: number;
 }
 
-interface EquationWidgetProps {
-  isTransparent?: boolean;
-}
-
-// --- SUB-COMPONENT: SCALE ITEM ---
-const ScaleItem: React.FC<{ item: EqItem, onClick: () => void }> = ({ item, onClick }) => {
-    if (item.type === 'X') {
-        return (
-            <div 
-                onClick={(e) => { e.stopPropagation(); onClick(); }}
-                className="relative w-12 h-12 bg-blue-500 border-2 border-blue-600 rounded-lg shadow-[0_4px_0_rgb(29,78,216)] text-white flex items-center justify-center font-bold text-lg cursor-pointer hover:bg-red-500 hover:border-red-600 hover:shadow-[0_4px_0_rgb(220,38,38)] hover:-translate-y-1 transition-all group mb-1" 
-                title="Variabel X (Klicka för att ta bort)"
-            >
-                x
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                    <Icons.Close size={24} />
-                </div>
-            </div>
-        );
-    }
-    if (item.type === 'ONE') {
-        return (
-            <div 
-                onClick={(e) => { e.stopPropagation(); onClick(); }}
-                className="relative w-10 h-10 bg-amber-400 border-2 border-amber-600 rounded-md shadow-[0_3px_0_rgb(217,119,6)] text-amber-900 flex items-center justify-center font-bold text-base cursor-pointer hover:bg-red-500 hover:text-white hover:border-red-600 hover:shadow-[0_3px_0_rgb(220,38,38)] hover:-translate-y-1 transition-all group m-0.5" 
-                title="Vikt 1 (Klicka för att ta bort)"
-            >
-                1
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                    <Icons.Close size={18} />
-                </div>
-            </div>
-        );
-    }
-    if (item.type === 'NEG_ONE') {
-        return (
-            <div className="relative group z-20 flex flex-col items-center" style={{ marginBottom: '45px', marginTop: '-30px' }}>
-                {/* String */}
-                <div className="w-0.5 h-12 bg-slate-400 group-hover:bg-red-300"></div>
-                {/* Balloon */}
-                <div 
-                    onClick={(e) => { e.stopPropagation(); onClick(); }}
-                    className="w-10 h-12 bg-red-500 border border-red-600 rounded-[50%_50%_50%_50%_/_40%_40%_60%_60%] flex items-center justify-center text-white font-bold text-sm cursor-pointer hover:scale-110 hover:bg-red-600 transition-all shadow-inner relative -mt-1" 
-                    title="Ballong -1 (Lyfter upp)"
-                >
-                    -1
-                    <div className="absolute bottom-[-3px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[3px] border-r-[3px] border-b-[4px] border-l-transparent border-r-transparent border-b-red-500 rotate-180"></div>
-                    {/* Shine */}
-                    <div className="absolute top-2 right-2 w-2 h-4 bg-white/20 rounded-full rotate-[-15deg]"></div>
-                </div>
-            </div>
-        );
-    }
-    return null;
-};
-
-export const EquationWidget: React.FC<EquationWidgetProps> = ({ isTransparent }) => {
-  const [itemsL, setItemsL] = useState<EqItem[]>([]);
-  const [itemsR, setItemsR] = useState<EqItem[]>([]);
-  const [xValue, setXValue] = useState<number>(4); 
-  const [isBalanced, setIsBalanced] = useState(false);
-  const [tilt, setTilt] = useState(0); // Degrees
+export const EquationWidget: React.FC = () => {
+  // --- STATE ---
+  const [mode, setMode] = useState<Representation>('MATCHSTICKS');
+  const [hiddenX, setHiddenX] = useState(5);
+  const [state, setState] = useState<EquationState>({ vlX: 1, vlConst: 2, hlX: 0, hlConst: 7 });
+  const [feedbackSide, setFeedbackSide] = useState<'VL' | 'HL' | null>(null);
   
-  // Input state
-  const [inputStr, setInputStr] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
+  // Calculate Balance
+  const vlMass = state.vlX * hiddenX + state.vlConst;
+  const hlMass = state.hlX * hiddenX + state.hlConst;
+  const isBalanced = vlMass === hlMass;
 
-  // --- HELPERS ---
+  // --- ACTIONS ---
+  const reset = (level: number = 1) => {
+    const newX = Math.floor(Math.random() * 5) + 3; // 3-7
+    setHiddenX(newX);
+    setFeedbackSide(null);
+    
+    if (level === 1) { // x + a = b
+        const a = Math.floor(Math.random() * 5) + 1;
+        setState({ vlX: 1, vlConst: a, hlX: 0, hlConst: newX + a });
+    } else if (level === 2) { // ax = b
+        const a = 2;
+        setState({ vlX: a, vlConst: 0, hlX: 0, hlConst: newX * a });
+    } else { // ax + b = cx + d
+        const a = Math.floor(Math.random() * 3) + 1;
+        setState({ vlX: 2, vlConst: a, hlX: 1, hlConst: newX + a });
+    }
+  };
 
-  const generateId = () => Math.random().toString(36).substr(2, 9);
-  const createItem = (type: ItemType): EqItem => ({ id: generateId(), type });
+  const handleObjectClick = (side: Side, type: 'X' | 'CONST') => {
+      // Symmetrical subtraction logic
+      const hasOnBoth = type === 'X' 
+        ? (state.vlX > 0 && state.hlX > 0)
+        : (state.vlConst > 0 && state.hlConst > 0);
 
-  // Generate the math string from items (e.g. "2x + 1")
-  const getSideString = (items: EqItem[]) => {
-      let xCount = 0;
-      let constant = 0;
-      items.forEach(i => {
-          if (i.type === 'X') xCount++;
-          if (i.type === 'ONE') constant++;
-          if (i.type === 'NEG_ONE') constant--;
-      });
-
-      if (xCount === 0 && constant === 0) return '0';
-
-      const parts = [];
-      if (xCount > 0) parts.push(xCount === 1 ? 'x' : `${xCount}x`);
-      
-      if (constant !== 0) {
-          if (parts.length > 0) {
-              // We have Xs, so we need + or - separator
-              if (constant > 0) parts.push(`+ ${constant}`);
-              else parts.push(`- ${Math.abs(constant)}`);
-          } else {
-              // No Xs, just the number
-              parts.push(`${constant}`);
-          }
+      if (hasOnBoth) {
+          setState(s => ({
+              ...s,
+              vlX: type === 'X' ? s.vlX - 1 : s.vlX,
+              hlX: type === 'X' ? s.hlX - 1 : s.hlX,
+              vlConst: type === 'CONST' ? s.vlConst - 1 : s.vlConst,
+              hlConst: type === 'CONST' ? s.hlConst - 1 : s.hlConst
+          }));
+          setFeedbackSide(side === 'VL' ? 'HL' : 'VL');
+          setTimeout(() => setFeedbackSide(null), 300);
+      } else {
+          // Remove from one side only
+          setState(s => ({
+              ...s,
+              vlX: (side === 'VL' && type === 'X') ? Math.max(0, s.vlX - 1) : s.vlX,
+              hlX: (side === 'HL' && type === 'X') ? Math.max(0, s.hlX - 1) : s.hlX,
+              vlConst: (side === 'VL' && type === 'CONST') ? s.vlConst - 1 : s.vlConst,
+              hlConst: (side === 'HL' && type === 'CONST') ? s.hlConst - 1 : s.hlConst
+          }));
       }
-      return parts.join(' ');
-  };
-
-  // --- PARSING LOGIC ---
-  const parseAndLoad = (e?: React.FormEvent) => {
-      if (e) e.preventDefault();
-      setErrorMsg("");
-
-      if (!inputStr.trim()) return;
-
-      const eq = inputStr.toLowerCase().replace(/\s+/g, ''); 
-      const sides = eq.split('=');
-
-      if (sides.length !== 2) {
-          setErrorMsg("Använd likhetstecken (=)");
-          return;
-      }
-
-      const parseSide = (str: string): EqItem[] => {
-          const items: EqItem[] = [];
-          // Split by + or - but keep the delimiter
-          const terms = str.replace(/([+-])/g, '|$1').split('|').filter(t => t);
-
-          terms.forEach(term => {
-              if (term.includes('x')) {
-                  // Variable
-                  let coeffStr = term.replace('x', '');
-                  if (coeffStr === '' || coeffStr === '+') coeffStr = '1';
-                  if (coeffStr === '-') coeffStr = '-1';
-                  
-                  const coeff = parseInt(coeffStr, 10);
-                  if (!isNaN(coeff)) {
-                      if (coeff > 0) {
-                          for(let i=0; i<coeff; i++) items.push(createItem('X'));
-                      } else {
-                          setErrorMsg("Negativa x stöds ej visuellt än.");
-                      }
-                  }
-              } else {
-                  // Constant
-                  const val = parseInt(term, 10);
-                  if (!isNaN(val)) {
-                      if (val > 0) {
-                          for(let i=0; i<val; i++) items.push(createItem('ONE'));
-                      } else {
-                          for(let i=0; i<Math.abs(val); i++) items.push(createItem('NEG_ONE'));
-                      }
-                  }
-              }
-          });
-          return items;
-      };
-
-      const left = parseSide(sides[0]);
-      const right = parseSide(sides[1]);
-
-      // Calculate a suitable X to make it balance if possible, else default to 4
-      let xCount = 0;
-      let constCount = 0;
-      
-      const countSide = (arr: EqItem[], multiplier: number) => {
-          arr.forEach(i => {
-              if (i.type === 'X') xCount += multiplier;
-              if (i.type === 'ONE') constCount += multiplier;
-              if (i.type === 'NEG_ONE') constCount -= multiplier;
-          });
-      };
-      
-      // Left side positive, Right side negative (move to left)
-      countSide(left, 1);
-      countSide(right, -1);
-      
-      // Equation: xCount * X + constCount = 0  =>  xCount * X = -constCount  =>  X = -constCount / xCount
-      if (xCount !== 0) {
-          const solvedX = -constCount / xCount;
-          if (solvedX > 0 && Number.isInteger(solvedX)) {
-              setXValue(solvedX);
-          } else {
-              setXValue(5); // Default if solution is weird
-          }
-      }
-
-      setItemsL(left);
-      setItemsR(right);
-  };
-
-  // --- PHYSICS LOOP ---
-  useEffect(() => {
-      const calcMass = (items: EqItem[]) => {
-          let m = 0;
-          items.forEach(i => {
-              if (i.type === 'X') m += xValue;
-              if (i.type === 'ONE') m += 1;
-              if (i.type === 'NEG_ONE') m -= 1;
-          });
-          return m;
-      };
-
-      const massL = calcMass(itemsL);
-      const massR = calcMass(itemsR);
-      const diff = massL - massR;
-      
-      // Use epsilon for float comparison safety
-      setIsBalanced(Math.abs(diff) < 0.001);
-      
-      // Max tilt 15 degrees
-      const targetTilt = Math.max(-15, Math.min(15, diff * 2));
-      setTilt(targetTilt);
-
-  }, [itemsL, itemsR, xValue]);
-
-
-  // --- INTERACTION ---
-  const addItem = (side: 'L' | 'R', type: ItemType) => {
-      const newItem = createItem(type);
-      if (side === 'L') setItemsL([...itemsL, newItem]);
-      else setItemsR([...itemsR, newItem]);
-  };
-
-  const removeItem = (side: 'L' | 'R', id: string) => {
-      if (side === 'L') setItemsL(itemsL.filter(i => i.id !== id));
-      else setItemsR(itemsR.filter(i => i.id !== id));
-  };
-  
-  const clearAll = () => {
-      setItemsL([]);
-      setItemsR([]);
-      setInputStr("");
-      setErrorMsg("");
   };
 
   return (
-    <div className="w-full h-full flex flex-col gap-4 select-none min-h-[500px]">
+    <div className="w-full h-full flex flex-col gap-2 select-none bg-white p-2 overflow-hidden">
       
-      {/* 1. INPUT & CONTROL HEADER */}
-      <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-3">
-          <div className="flex gap-2 w-full">
-              <form onSubmit={parseAndLoad} className="flex-1 flex gap-2">
-                <input 
-                    type="text" 
-                    value={inputStr}
-                    onChange={(e) => setInputStr(e.target.value)}
-                    placeholder="Ekvation (t.ex. 2x + 1 = 9)"
-                    className="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-2 font-mono font-bold text-slate-700 shadow-inner focus:ring-2 ring-blue-500 outline-none"
-                />
-                <button type="submit" className="bg-slate-800 text-white px-4 py-2 rounded-lg font-bold hover:bg-slate-700 active:scale-95 transition-all shadow-sm">
-                    Ladda
-                </button>
-              </form>
-              <button onClick={clearAll} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Rensa">
-                  <Icons.Trash size={20} />
-              </button>
-          </div>
-          
-          {errorMsg && <div className="text-xs font-bold text-red-500 px-1">{errorMsg}</div>}
-          
-          {/* Presets */}
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-              {['x + 3 = 7', '2x = 8', '2x + 1 = x + 5'].map(eq => (
-                  <button 
-                    key={eq}
-                    onClick={() => { setInputStr(eq); setTimeout(() => document.querySelector<HTMLButtonElement>('button[type=submit]')?.click(), 10); }}
-                    className="whitespace-nowrap px-3 py-1 bg-white border border-slate-200 rounded-full text-xs font-medium text-slate-600 hover:border-blue-300 hover:text-blue-600 transition-colors"
-                  >
-                      {eq}
-                  </button>
-              ))}
+      {/* 1. TOP CONTROLS & MODE SELECTOR */}
+      <div className="shrink-0 flex flex-col gap-3 p-2 bg-slate-50 rounded-xl border border-slate-200">
+          <div className="flex justify-between items-center">
+                <div className="flex bg-slate-200 p-1 rounded-lg shadow-inner">
+                    <button 
+                        onClick={() => setMode('BLOCKS')} 
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-[10px] font-black uppercase transition-all ${mode === 'BLOCKS' ? 'bg-white text-blue-600 shadow' : 'text-slate-500'}`}
+                    >
+                        <Icons.Cube size={14} /> Standard
+                    </button>
+                    <button 
+                        onClick={() => setMode('MATCHSTICKS')} 
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-[10px] font-black uppercase transition-all ${mode === 'MATCHSTICKS' ? 'bg-white text-blue-600 shadow' : 'text-slate-50'}`}
+                        style={mode !== 'MATCHSTICKS' ? { color: '#64748b' } : {}}
+                    >
+                        <Icons.Scale size={14} /> Tändstickor
+                    </button>
+                </div>
+
+                <div className="flex gap-1">
+                    {[1, 2, 3].map(lvl => (
+                        <button key={lvl} onClick={() => reset(lvl)} className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] font-bold text-slate-600 hover:border-blue-300 hover:text-blue-600 transition-all shadow-sm">
+                            Nivå {lvl}
+                        </button>
+                    ))}
+                </div>
           </div>
       </div>
 
-      {/* 2. DYNAMIC EQUATION DISPLAY */}
-      <div className="flex justify-center items-center py-2 px-4 gap-6 bg-white rounded-xl border border-slate-200 shadow-sm min-h-[60px]">
-          <div className="text-2xl font-mono font-bold text-slate-700 tracking-wide">
-              {getSideString(itemsL)}
-          </div>
-          <div className={`text-3xl font-bold transition-colors duration-300 ${isBalanced ? 'text-green-500' : 'text-orange-400'}`}>
-              {isBalanced ? '=' : '≠'}
-          </div>
-          <div className="text-2xl font-mono font-bold text-slate-700 tracking-wide">
-              {getSideString(itemsR)}
-          </div>
-      </div>
-
-      {/* 3. MAIN VISUALIZATION AREA */}
-      <div className="flex-1 bg-gradient-to-b from-blue-50 to-white rounded-xl border border-slate-200 relative overflow-hidden flex flex-col items-center justify-end shadow-inner">
-           
-           {/* Status Indicator (Floating Top) - HIGH Z-INDEX TO SHOW ABOVE BEAM */}
-           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 w-full flex justify-center pointer-events-none">
-               {isBalanced ? (
-                   <div className="bg-green-500 border-2 border-green-400 text-white px-6 py-3 rounded-xl shadow-xl animate-in zoom-in slide-in-from-bottom-4 flex flex-col items-center pointer-events-auto">
-                       <div className="flex items-center gap-2 mb-1">
-                            <Icons.Scale size={20} className="stroke-[3px]" />
-                            <span className="font-black uppercase tracking-widest text-sm">BALANS!</span>
-                       </div>
-                       <div className="bg-white/20 px-3 py-1 rounded text-lg font-mono font-bold">
-                           Lösning: x = {xValue}
-                       </div>
-                   </div>
-               ) : (
-                   <div className="bg-white/80 backdrop-blur border border-red-200 text-red-500 px-4 py-1.5 rounded-full shadow-sm flex items-center gap-2 pointer-events-auto">
-                       <Icons.Close size={16} />
-                       <span className="font-bold text-xs uppercase tracking-wider">Obalans</span>
-                   </div>
-               )}
-           </div>
-
-           {/* --- THE SCALE RIG --- */}
-           <div className="relative w-full h-[320px] flex justify-center items-end pb-8">
-               
-               {/* 1. Base (Static) */}
-               <div className="absolute bottom-8 w-4 h-48 bg-slate-700 rounded-t-full z-10 shadow-xl"></div>
-               <div className="absolute bottom-8 w-32 h-6 bg-slate-800 rounded-t-full z-10"></div>
-               
-               {/* 2. Beam Container (Rotates) */}
-               <div 
-                   className="absolute bottom-[200px] w-[80%] max-w-[500px] h-0 z-20 transition-transform duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
-                   style={{ transform: `rotate(${tilt}deg)` }}
-               >
-                   {/* The Beam Bar */}
-                   <div className="absolute -top-3 left-0 w-full h-6 bg-slate-600 rounded-full border-b-4 border-slate-800 shadow-md flex items-center justify-between px-2">
-                       {/* Pivot Point */}
-                       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-slate-300 rounded-full border-4 border-slate-600 shadow-inner z-30"></div>
-                   </div>
-
-                   {/* --- LEFT PAN ASSEMBLY --- */}
-                   <div className="absolute left-4 top-0" style={{ transform: `rotate(${-tilt}deg)`, transition: 'transform 0.7s' }}>
-                        {/* Chain */}
-                        <div className="absolute top-0 left-0 w-[2px] h-32 bg-slate-400 origin-top -translate-x-1/2"></div>
-                        
-                        {/* Pan */}
-                        <div className="absolute top-32 left-0 -translate-x-1/2 w-40 min-h-[10px]">
-                            {/* Pan Dish */}
-                            <div className="w-full h-4 bg-slate-800/20 border-b-4 border-slate-500 rounded-b-full absolute top-0 backdrop-blur-sm"></div>
-                            
-                            {/* Items Container (Grows upwards from pan) */}
-                            <div className="flex flex-wrap-reverse justify-center gap-1 absolute bottom-0 w-full px-2 pb-1" style={{ transform: 'translateY(-4px)' }}>
-                                {itemsL.map(item => (
-                                    <ScaleItem key={item.id} item={item} onClick={() => removeItem('L', item.id)} />
-                                ))}
-                            </div>
-                        </div>
-                   </div>
-
-                   {/* --- RIGHT PAN ASSEMBLY --- */}
-                   <div className="absolute right-4 top-0" style={{ transform: `rotate(${-tilt}deg)`, transition: 'transform 0.7s' }}>
-                        {/* Chain */}
-                        <div className="absolute top-0 right-0 w-[2px] h-32 bg-slate-400 origin-top translate-x-1/2"></div>
-                        
-                        {/* Pan */}
-                        <div className="absolute top-32 right-0 translate-x-1/2 w-40 min-h-[10px]">
-                            {/* Pan Dish */}
-                            <div className="w-full h-4 bg-slate-800/20 border-b-4 border-slate-500 rounded-b-full absolute top-0 backdrop-blur-sm"></div>
-                            
-                            {/* Items Container */}
-                            <div className="flex flex-wrap-reverse justify-center gap-1 absolute bottom-0 w-full px-2 pb-1" style={{ transform: 'translateY(-4px)' }}>
-                                {itemsR.map(item => (
-                                    <ScaleItem key={item.id} item={item} onClick={() => removeItem('R', item.id)} />
-                                ))}
-                            </div>
-                        </div>
-                   </div>
-
+      {/* 2. THE BALANCE SCALE AREA */}
+      <div className="flex-1 relative flex flex-col items-center justify-center p-4 min-h-[300px]">
+          
+          {/* Status Badge */}
+          <div className="absolute top-0 right-0 z-50">
+               <div className={`px-4 py-2 rounded-xl border-2 flex flex-col items-center transition-all duration-500 shadow-md ${isBalanced ? 'bg-green-50 border-green-300 text-green-600' : 'bg-red-50 border-red-200 text-red-500 animate-pulse'}`}>
+                    <div className="text-[9px] font-black uppercase tracking-widest">{isBalanced ? 'Jämvikt' : 'Obalans'}</div>
+                    <div className="text-xl font-black">{isBalanced ? '=' : '≠'}</div>
                </div>
-           </div>
-      </div>
-
-      {/* 4. MANUAL CONTROLS */}
-      <div className="grid grid-cols-2 gap-4">
-          <div className="bg-white p-2 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center gap-2">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Vänster Skål</span>
-              <div className="flex gap-3">
-                  <button onClick={() => addItem('L', 'X')} className="w-12 h-12 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-bold shadow-sm border border-blue-200 flex flex-col items-center justify-center transition-all active:scale-95">
-                      <span className="text-lg leading-none">x</span>
-                  </button>
-                  <button onClick={() => addItem('L', 'ONE')} className="w-12 h-12 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg font-bold shadow-sm border border-amber-200 flex flex-col items-center justify-center transition-all active:scale-95">
-                      <span className="text-lg leading-none">1</span>
-                  </button>
-                  <button onClick={() => addItem('L', 'NEG_ONE')} className="w-12 h-12 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-bold shadow-sm border border-red-200 flex flex-col items-center justify-center transition-all active:scale-95">
-                      <span className="text-lg leading-none">-1</span>
-                  </button>
-              </div>
           </div>
 
-          <div className="bg-white p-2 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center gap-2">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Höger Skål</span>
-              <div className="flex gap-3">
-                  <button onClick={() => addItem('R', 'X')} className="w-12 h-12 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-bold shadow-sm border border-blue-200 flex flex-col items-center justify-center transition-all active:scale-95">
-                      <span className="text-lg leading-none">x</span>
-                  </button>
-                  <button onClick={() => addItem('R', 'ONE')} className="w-12 h-12 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg font-bold shadow-sm border border-amber-200 flex flex-col items-center justify-center transition-all active:scale-95">
-                      <span className="text-lg leading-none">1</span>
-                  </button>
-                  <button onClick={() => addItem('R', 'NEG_ONE')} className="w-12 h-12 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-bold shadow-sm border border-red-200 flex flex-col items-center justify-center transition-all active:scale-95">
-                      <span className="text-lg leading-none">-1</span>
-                  </button>
+          <div className="w-full max-w-[600px] relative mt-10">
+              {/* Scale Beam */}
+              <div 
+                className="w-full h-3 bg-gradient-to-b from-slate-400 to-slate-600 rounded-full relative transition-transform duration-1000 ease-in-out flex shadow-xl z-30"
+                style={{ transform: `rotate(${Math.max(-12, Math.min(12, (vlMass - hlMass) * 1.5))}deg)` }}
+              >
+                  {/* Left Pan */}
+                  <div 
+                    className={`absolute -top-[180px] left-2 w-[44%] h-[180px] flex flex-col justify-end items-center transition-all duration-1000 origin-top z-40 ${feedbackSide === 'VL' ? 'opacity-30 scale-95' : 'opacity-100'}`}
+                    style={{ transform: `rotate(${-Math.max(-12, Math.min(12, (vlMass - hlMass) * 1.5))}deg)` }}
+                  >
+                      <div className="flex-1 flex flex-wrap justify-center content-end gap-2 p-3 w-full max-h-[160px] overflow-visible pb-2">
+                          {Array.from({length: state.vlX}).map((_, i) => (
+                              <ObjectRenderer key={`vlx-${i}`} type="X" mode={mode} onClick={() => handleObjectClick('VL', 'X')} />
+                          ))}
+                          <div className="w-full flex flex-wrap justify-center gap-1 items-end">
+                              {Array.from({length: Math.max(0, state.vlConst)}).map((_, i) => (
+                                  <ObjectRenderer key={`vlc-${i}`} type="CONST" mode={mode} onClick={() => handleObjectClick('VL', 'CONST')} />
+                              ))}
+                              {Array.from({length: Math.abs(Math.min(0, state.vlConst))}).map((_, i) => (
+                                  <div key={`vln-${i}`} className="flex flex-col items-center">
+                                      <div onClick={() => handleObjectClick('VL', 'CONST')} className="w-6 h-8 bg-rose-500 rounded-full border-2 border-rose-700 flex items-center justify-center text-[8px] text-white font-bold cursor-pointer shadow-sm hover:scale-110"> -1 </div>
+                                      <div className="w-[1px] h-3 bg-slate-300"></div>
+                                  </div>
+                              ))}
+                          </div>
+                      </div>
+                      <div className="w-full h-5 rounded-b-[40px] border-b-8 border-slate-400 bg-slate-200 shadow-lg" />
+                  </div>
+
+                  {/* Right Pan */}
+                  <div 
+                    className={`absolute -top-[180px] right-2 w-[44%] h-[180px] flex flex-col justify-end items-center transition-all duration-1000 origin-top z-40 ${feedbackSide === 'HL' ? 'opacity-30 scale-95' : 'opacity-100'}`}
+                    style={{ transform: `rotate(${-Math.max(-12, Math.min(12, (vlMass - hlMass) * 1.5))}deg)` }}
+                  >
+                      <div className="flex-1 flex flex-wrap justify-center content-end gap-2 p-3 w-full max-h-[160px] overflow-visible pb-2">
+                          {Array.from({length: state.hlX}).map((_, i) => (
+                              <ObjectRenderer key={`hlx-${i}`} type="X" mode={mode} onClick={() => handleObjectClick('HL', 'X')} />
+                          ))}
+                          <div className="w-full flex flex-wrap justify-center gap-1 items-end">
+                              {Array.from({length: Math.max(0, state.hlConst)}).map((_, i) => (
+                                  <ObjectRenderer key={`hlc-${i}`} type="CONST" mode={mode} onClick={() => handleObjectClick('HL', 'CONST')} />
+                              ))}
+                              {Array.from({length: Math.abs(Math.min(0, state.hlConst))}).map((_, i) => (
+                                  <div key={`hln-${i}`} className="flex flex-col items-center">
+                                      <div onClick={() => handleObjectClick('HL', 'CONST')} className="w-6 h-8 bg-rose-500 rounded-full border-2 border-rose-700 flex items-center justify-center text-[8px] text-white font-bold cursor-pointer shadow-sm hover:scale-110"> -1 </div>
+                                      <div className="w-[1px] h-3 bg-slate-300"></div>
+                                  </div>
+                              ))}
+                          </div>
+                      </div>
+                      <div className="w-full h-5 rounded-b-[40px] border-b-8 border-slate-400 bg-slate-200 shadow-lg" />
+                  </div>
               </div>
+
+              {/* Pivot Point / Stand */}
+              <div className="absolute top-[8px] left-1/2 -translate-x-1/2 w-6 h-52 bg-gradient-to-b from-slate-200 via-slate-300 to-slate-400 border-x-2 border-slate-400/30 -z-10 rounded-t-full shadow-inner" />
+              <div className="absolute top-[210px] left-1/2 -translate-x-1/2 w-24 h-4 bg-slate-500 rounded-full shadow-lg -z-10" />
           </div>
       </div>
 
+      {/* 3. INTERACTIVE MATH BAR */}
+      <div className="p-4 bg-slate-100 border-t border-slate-200 shrink-0">
+          <div className="flex flex-col items-center gap-4">
+              <div className={`flex items-center gap-6 px-10 py-4 rounded-3xl shadow-xl border-4 font-mono text-3xl font-black transition-all duration-500 ${isBalanced ? 'bg-white border-blue-400' : 'bg-white/50 border-slate-200 opacity-60'}`}>
+                  <div className={`${isBalanced ? 'text-blue-600' : 'text-slate-400'}`}>
+                    {state.vlX > 0 ? `${state.vlX === 1 ? '' : state.vlX}x` : ''}
+                    {state.vlX > 0 && state.vlConst !== 0 ? (state.vlConst > 0 ? ' + ' : ' - ') : ''}
+                    {state.vlConst !== 0 ? Math.abs(state.vlConst) : (state.vlX === 0 ? '0' : '')}
+                  </div>
+                  <div className={`text-4xl transition-colors duration-500 ${isBalanced ? 'text-green-500' : 'text-slate-300'}`}>
+                    {isBalanced ? '=' : '≠'}
+                  </div>
+                  <div className={`${isBalanced ? 'text-blue-600' : 'text-slate-400'}`}>
+                    {state.hlX > 0 ? `${state.hlX === 1 ? '' : state.hlX}x` : ''}
+                    {state.hlX > 0 && state.hlConst !== 0 ? (state.hlConst > 0 ? ' + ' : ' - ') : ''}
+                    {state.hlConst !== 0 ? Math.abs(state.hlConst) : (state.hlX === 0 ? '0' : '')}
+                  </div>
+              </div>
+
+              {/* Manipulation Buttons */}
+              <div className="flex flex-wrap justify-center gap-2">
+                  <ActionButton label="+ 1" onClick={() => setState(s => ({...s, vlConst: s.vlConst + 1, hlConst: s.hlConst + 1}))} color="amber" />
+                  <ActionButton label="- 1" onClick={() => setState(s => ({...s, vlConst: s.vlConst - 1, hlConst: s.hlConst - 1}))} color="red" />
+                  <ActionButton label="+ x" onClick={() => setState(s => ({...s, vlX: s.vlX + 1, hlX: s.hlX + 1}))} color="blue" />
+                  <ActionButton label="- x" onClick={() => setState(s => ({...s, vlX: Math.max(0, s.vlX - 1), hlX: Math.max(0, s.hlX - 1)}))} color="blue" />
+                  <ActionButton label="Rensa" onClick={() => setState({vlX: 0, vlConst: 0, hlX: 0, hlConst: 0})} color="slate" />
+              </div>
+          </div>
+      </div>
     </div>
   );
+};
+
+/**
+ * Hjälpkomponent för knappar
+ */
+const ActionButton = ({ label, onClick, color }: { label: string, onClick: () => void, color: string }) => {
+    const colorClasses = {
+        amber: 'bg-amber-100 text-amber-700 hover:bg-amber-500 hover:text-white border-amber-200',
+        red: 'bg-red-50 text-red-600 hover:bg-red-500 hover:text-white border-red-100',
+        blue: 'bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white border-blue-100',
+        slate: 'bg-slate-100 text-slate-500 hover:bg-slate-500 hover:text-white border-slate-200'
+    }[color] || '';
+
+    return (
+        <button 
+            onClick={onClick} 
+            className={`px-3 py-1.5 rounded-xl border font-black text-[10px] uppercase transition-all shadow-sm active:scale-90 ${colorClasses}`}
+        >
+            {label}
+        </button>
+    );
+};
+
+/**
+ * Hjälpkomponent för att rita objekt (block eller tändstickor)
+ */
+const ObjectRenderer: React.FC<{ type: 'X' | 'CONST', mode: Representation, onClick: () => void }> = ({ type, mode, onClick }) => {
+    if (mode === 'BLOCKS') {
+        if (type === 'X') return (
+            <div onClick={onClick} className="w-10 h-10 bg-blue-500 border-2 border-blue-700 rounded-lg flex items-center justify-center text-white font-black shadow-md cursor-pointer hover:scale-110 active:scale-95 transition-transform">x</div>
+        );
+        return (
+            <div onClick={onClick} className="w-6 h-6 bg-amber-400 border-2 border-amber-600 rounded shadow-sm flex items-center justify-center text-[8px] font-black text-amber-900 cursor-pointer hover:scale-110 active:scale-95 transition-transform">+1</div>
+        );
+    }
+
+    // Matchsticks Mode
+    if (type === 'X') return (
+        <div onClick={onClick} className="relative w-20 h-12 bg-[#7a5230] border-2 border-[#4a2e1a] rounded-lg shadow-md cursor-pointer hover:brightness-110 active:scale-95 transition-all overflow-hidden">
+            <div className="absolute inset-1 bg-[#d9c5a7] border border-[#3d2917]/30 rounded-sm flex items-center justify-center shadow-inner overflow-hidden">
+                <div className="w-8 h-6 bg-blue-600 rounded-full flex items-center justify-center relative border border-yellow-400">
+                    <div className="w-4 h-4 bg-yellow-400 rounded-full blur-[1px] opacity-40"></div>
+                </div>
+                <div className="absolute bottom-0 left-0 w-full h-1 bg-[#4a2e1a] opacity-50"></div>
+            </div>
+        </div>
+    );
+    return (
+        <div onClick={onClick} className="w-2 h-14 bg-[#e3c49a] rounded-sm relative shadow-sm border-t-4 border-red-600 cursor-pointer hover:scale-110 active:scale-95 transition-transform flex-shrink-0" />
+    );
 };

@@ -23,7 +23,12 @@ import {
   Home, 
   Circle, 
   Shapes,
-  StretchHorizontal
+  StretchHorizontal,
+  Wrench,
+  ChevronDown,
+  Pencil,
+  Eraser,
+  Paintbrush
 } from 'lucide-react';
 
 export const Icons = {
@@ -51,5 +56,10 @@ export const Icons = {
   Home,
   Bead: Circle,
   Shapes,
-  Bars: StretchHorizontal
+  Bars: StretchHorizontal,
+  Tools: Wrench,
+  ChevronDown,
+  Pencil,
+  Eraser,
+  Paintbrush
 };
