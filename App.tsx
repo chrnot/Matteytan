@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Toolbar } from './components/Toolbar';
 import { WidgetWrapper } from './components/WidgetWrapper';
 import { Logo } from './components/Logo';
-import { WidgetType, WidgetInstance, BackgroundType } from './types';
+import { WidgetType, WidgetInstance, BackgroundType, BackgroundConfig } from './types';
 import { NumberLineWidget } from './components/widgets/NumberLineWidget';
 import { RulerWidget } from './components/widgets/RulerWidget';
 import { ProtractorWidget } from './components/widgets/ProtractorWidget';
@@ -22,8 +22,17 @@ import { NumberBeadsWidget } from './components/widgets/NumberBeadsWidget';
 import { ShapesWidget } from './components/widgets/ShapesWidget';
 import { FractionBarsWidget } from './components/widgets/FractionBarsWidget';
 import { MathWorkshopWidget } from './components/widgets/MathWorkshopWidget';
+import { PrimeBubblesWidget } from './components/widgets/PrimeBubblesWidget';
+import { ChanceGeneratorWidget } from './components/widgets/ChanceGeneratorWidget';
 import { Icons } from './components/icons';
 import { DrawingCanvas, DrawingCanvasHandle } from './components/DrawingCanvas';
+
+const BACKGROUNDS: BackgroundConfig[] = [
+  { type: 'GRID', label: 'Rutnät', className: 'bg-grid-pattern' },
+  { type: 'DOTS', label: 'Prickar', className: 'bg-dot-pattern' },
+  { type: 'WHITE', label: 'Vit', className: 'bg-white' },
+  { type: 'BLACK', label: 'Svart', className: 'bg-slate-900' },
+];
 
 const App: React.FC = () => {
   const [widgets, setWidgets] = useState<WidgetInstance[]>([]);
@@ -33,7 +42,7 @@ const App: React.FC = () => {
   
   // Drawing State
   const [isDrawingMode, setIsDrawingMode] = useState(false);
-  const [drawColor, setDrawColor] = useState('#ef4444'); // Red as default
+  const [drawColor, setDrawColor] = useState('#ef4444'); 
   const [drawWidth, setDrawWidth] = useState(4);
   const [isEraser, setIsEraser] = useState(false);
   const drawingCanvasRef = useRef<DrawingCanvasHandle>(null);
@@ -43,30 +52,31 @@ const App: React.FC = () => {
   const getDefaultSize = (type: WidgetType) => {
       const screenW = window.innerWidth;
       const screenH = window.innerHeight;
-      const isTablet = screenW < 1024;
-      const isMobile = screenW < 640;
+      const isMobile = screenW < 768;
 
-      const maxWidth = screenW * 0.95;
-      const clampW = (w: number) => Math.min(w, maxWidth);
+      const clampW = (w: number) => Math.min(w, screenW * 0.95);
+      const clampH = (h: number) => Math.min(h, screenH * 0.85);
 
       switch(type) {
-          case WidgetType.NUMBER_LINE: return { w: clampW(800), h: 380 };
-          case WidgetType.COORDINATES: return { w: clampW(isTablet ? 650 : 700), h: isTablet ? 550 : 450 };
-          case WidgetType.PROBABILITY: return { w: clampW(550), h: Math.min(650, screenH * 0.8) };
-          case WidgetType.BASE_10: return { w: clampW(850), h: isTablet ? 650 : 550 };
-          case WidgetType.PERCENTAGE: return { w: clampW(700), h: isMobile ? 550 : 420 };
-          case WidgetType.NUMBER_BEADS: return { w: clampW(650), h: 420 };
-          case WidgetType.FRACTION: return { w: clampW(550), h: isMobile ? 550 : 350 };
-          case WidgetType.RULER: return { w: 500, h: 200 };
-          case WidgetType.PROTRACTOR: return { w: 450, h: 300 };
-          case WidgetType.EQUATION: return { w: clampW(600), h: isTablet ? 700 : 650 };
-          case WidgetType.HUNDRED_CHART: return { w: clampW(500), h: 650 };
-          case WidgetType.NUMBER_OF_DAY: return { w: clampW(450), h: isMobile ? 650 : 550 };
-          case WidgetType.FRACTION_BARS: return { w: clampW(800), h: isTablet ? 650 : 550 };
-          case WidgetType.NUMBER_HOUSE: return { w: clampW(380), h: 580 };
-          case WidgetType.CALCULATOR: return { w: clampW(360), h: 580 };
-          case WidgetType.SHAPES: return { w: clampW(500), h: isMobile ? 650 : 580 };
-          case WidgetType.MATH_WORKSHOP: return { w: clampW(850), h: isTablet ? 600 : 500 };
+          case WidgetType.NUMBER_LINE: return { w: clampW(800), h: clampH(380) };
+          case WidgetType.COORDINATES: return { w: clampW(isMobile ? 380 : 700), h: clampH(isMobile ? 500 : 450) };
+          case WidgetType.PROBABILITY: return { w: clampW(600), h: clampH(650) };
+          case WidgetType.BASE_10: return { w: clampW(850), h: clampH(550) };
+          case WidgetType.PERCENTAGE: return { w: clampW(700), h: clampH(420) };
+          case WidgetType.NUMBER_BEADS: return { w: clampW(650), h: clampH(420) };
+          case WidgetType.FRACTION: return { w: clampW(550), h: clampH(350) };
+          case WidgetType.RULER: return { w: clampW(500), h: 200 };
+          case WidgetType.PROTRACTOR: return { w: clampW(450), h: 300 };
+          case WidgetType.EQUATION: return { w: clampW(600), h: clampH(650) };
+          case WidgetType.HUNDRED_CHART: return { w: clampW(500), h: clampH(650) };
+          case WidgetType.NUMBER_OF_DAY: return { w: clampW(450), h: clampH(550) };
+          case WidgetType.FRACTION_BARS: return { w: clampW(800), h: clampH(550) };
+          case WidgetType.NUMBER_HOUSE: return { w: clampW(380), h: clampH(580) };
+          case WidgetType.CALCULATOR: return { w: clampW(360), h: clampH(580) };
+          case WidgetType.SHAPES: return { w: clampW(500), h: clampH(580) };
+          case WidgetType.MATH_WORKSHOP: return { w: clampW(850), h: clampH(600) };
+          case WidgetType.PRIME_BUBBLES: return { w: clampW(850), h: clampH(650) };
+          case WidgetType.CHANCE_GENERATOR: return { w: 280, h: 360 };
           default: return { w: clampW(450), h: 400 };
       }
   };
@@ -75,7 +85,6 @@ const App: React.FC = () => {
     const size = getDefaultSize(type);
     const id = `${type}-${Date.now()}`;
     
-    // Force Ruler and Protractor to open in transparent mode (no frame)
     if (type === WidgetType.RULER || type === WidgetType.PROTRACTOR) {
         setTransparentWidgets(prev => ({ ...prev, [id]: true }));
     }
@@ -137,7 +146,7 @@ const App: React.FC = () => {
       case WidgetType.COORDINATES: return <CoordinatesWidget {...props} />;
       case WidgetType.PROBABILITY: return <ProbabilityWidget {...props} />;
       case WidgetType.NUMBER_OF_DAY: return <NumberDayWidget {...props} />;
-      case WidgetType.EQUATION: return <EquationWidget />;
+      case WidgetType.EQUATION: return <EquationWidget {...props} />;
       case WidgetType.FORMULAS: return <FormulaWidget {...props} />;
       case WidgetType.CALCULATOR: return <CalculatorWidget {...props} />;
       case WidgetType.PERCENTAGE: return <PercentageWidget {...props} />;
@@ -148,6 +157,8 @@ const App: React.FC = () => {
       case WidgetType.SHAPES: return <ShapesWidget {...props} />;
       case WidgetType.FRACTION_BARS: return <FractionBarsWidget {...props} />;
       case WidgetType.MATH_WORKSHOP: return <MathWorkshopWidget {...props} />;
+      case WidgetType.PRIME_BUBBLES: return <PrimeBubblesWidget {...props} />;
+      case WidgetType.CHANCE_GENERATOR: return <ChanceGeneratorWidget {...props} />;
       default: return null;
     }
   };
@@ -172,13 +183,16 @@ const App: React.FC = () => {
       case WidgetType.SHAPES: return 'Former & Geometri';
       case WidgetType.FRACTION_BARS: return 'Bråkstavarna';
       case WidgetType.MATH_WORKSHOP: return 'Matte-verkstad';
+      case WidgetType.PRIME_BUBBLES: return 'Prim-Bubblorna';
+      case WidgetType.CHANCE_GENERATOR: return 'Slump-gen';
       default: return 'Widget';
     }
   };
 
   const EXTRA_TOOLS = [
     { type: 'DRAWING', icon: Icons.Pencil, label: 'Rita' },
-    { type: WidgetType.MATH_WORKSHOP, icon: Icons.Plus, label: 'Matte-verkstad' },
+    { type: WidgetType.CHANCE_GENERATOR, icon: Icons.Sparkles, label: 'Slump-gen' },
+    { type: WidgetType.MATH_WORKSHOP, icon: Icons.Plus, label: 'Verkstad' },
     { type: WidgetType.CALCULATOR, icon: Icons.Math, label: 'Räknare' },
     { type: WidgetType.SHAPES, icon: Icons.Shapes, label: 'Former' },
     { type: WidgetType.RULER, icon: Icons.Ruler, label: 'Linjal' },
@@ -199,10 +213,8 @@ const App: React.FC = () => {
       
       <Logo darkMode={background === 'BLACK'} />
 
-      {/* Floating Top Right Tools */}
       <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-[100] flex items-start gap-2 max-w-[50vw]">
          
-         {/* Dagens Tal Button */}
          <button 
             onClick={() => addWidget(WidgetType.NUMBER_OF_DAY)}
             className="flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-full shadow-lg border border-transparent hover:scale-105 active:scale-95 transition-all font-bold text-xs sm:text-sm"
@@ -210,7 +222,6 @@ const App: React.FC = () => {
              <Icons.Calendar size={16} /> <span className="hidden md:inline">Dagens Tal</span>
          </button>
 
-         {/* Tools Dropdown */}
          <div className="relative">
             <button 
                 onClick={() => setIsToolsOpen(!isToolsOpen)}
@@ -222,33 +233,40 @@ const App: React.FC = () => {
             </button>
 
             {isToolsOpen && (
-                <div className="absolute right-0 top-full mt-2 w-40 sm:w-48 bg-white/95 backdrop-blur rounded-xl shadow-xl border border-slate-200 p-1.5 flex flex-col gap-1 animate-in slide-in-from-top-2 fade-in duration-200">
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white/95 backdrop-blur rounded-xl shadow-xl border border-slate-200 p-1.5 flex flex-col gap-1 animate-in slide-in-from-top-2 fade-in duration-200 overflow-hidden">
+                    <div className="px-3 py-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 mb-1">Funktioner</div>
                     {EXTRA_TOOLS.map((tool) => (
                         <button
                             key={tool.label}
                             onClick={() => handleToolClick(tool)}
-                            className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left ${tool.type === 'DRAWING' && isDrawingMode ? 'bg-blue-50 text-blue-600' : 'hover:bg-slate-100 text-slate-700 hover:text-blue-600'}`}
+                            className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${tool.type === 'DRAWING' && isDrawingMode ? 'bg-blue-50 text-blue-600' : 'hover:bg-slate-100 text-slate-700 hover:text-blue-600'}`}
                         >
                             <div className="flex items-center gap-3">
                                 <tool.icon size={18} className={tool.type === 'DRAWING' && isDrawingMode ? 'text-blue-500' : 'text-slate-400'} />
                                 {tool.label}
                             </div>
-                            {tool.type === 'DRAWING' && isDrawingMode && (
-                                <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
-                            )}
                         </button>
                     ))}
+
+                    <div className="px-3 py-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 mt-2 mb-1">Bakgrund</div>
+                    <div className="flex gap-2 p-2 justify-center">
+                        {BACKGROUNDS.map(bg => (
+                            <button 
+                              key={bg.type}
+                              onClick={() => setBackground(bg.type)}
+                              className={`w-7 h-7 rounded-full border-2 transition-all shadow-sm ${background === bg.type ? 'border-blue-500 scale-110 ring-2 ring-blue-100' : 'border-slate-200 hover:scale-105'} ${bg.type === 'BLACK' ? 'bg-slate-900' : 'bg-white'}`}
+                              title={bg.label}
+                            >
+                                {bg.type === 'GRID' && <div className="w-full h-full opacity-30 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxwYXRoIGQ9Ik0gNCAwIEwgMCAwIDAgNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjEiLz48L3N2Zz4=')]"></div>}
+                                {bg.type === 'DOTS' && <div className="w-full h-full opacity-30 flex items-center justify-center"><div className="w-0.5 h-0.5 bg-black rounded-full"></div></div>}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             )}
-            
-            {isToolsOpen && (
-                <div className="fixed inset-0 z-[-1]" onClick={() => setIsToolsOpen(false)}></div>
-            )}
          </div>
-
       </div>
 
-      {/* Canvas Area (Widgets) */}
       {widgets.map(widget => (
         <WidgetWrapper
           key={widget.id}
@@ -268,7 +286,6 @@ const App: React.FC = () => {
         </WidgetWrapper>
       ))}
 
-      {/* Drawing Layer - Always on top when active */}
       <DrawingCanvas 
         ref={drawingCanvasRef}
         isDrawingMode={isDrawingMode}
@@ -278,7 +295,6 @@ const App: React.FC = () => {
         zIndex={topZ + 10} 
       />
 
-      {/* Intro Text if Empty */}
       {widgets.length === 0 && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none opacity-40 px-4">
               <h1 className={`text-4xl sm:text-6xl font-bold tracking-tight mb-4 ${background === 'BLACK' ? 'text-white' : 'text-slate-900'}`}>Matteytan</h1>
@@ -286,7 +302,6 @@ const App: React.FC = () => {
           </div>
       )}
 
-      {/* Toolbar */}
       <Toolbar 
         onAddWidget={addWidget} 
         onSetBackground={setBackground}

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   Move, 
@@ -28,7 +29,13 @@ import {
   ChevronDown,
   Pencil,
   Eraser,
-  Paintbrush
+  Paintbrush,
+  Sparkles,
+  Zap,
+  Coins,
+  Hash,
+  Crown,
+  Shuffle
 } from 'lucide-react';
 
 export const Icons = {
@@ -45,6 +52,7 @@ export const Icons = {
   Dice: Dices,
   Calendar,
   Scale,
+  // Fix: Map the shorthand property 'Book' to the imported 'BookOpen' component
   Book: BookOpen,
   Trash: Trash2,
   Reset: RefreshCw,
@@ -61,5 +69,11 @@ export const Icons = {
   ChevronDown,
   Pencil,
   Eraser,
-  Paintbrush
+  Paintbrush,
+  Sparkles,
+  Zap,
+  Coins,
+  Hash,
+  Crown,
+  Shuffle
 };

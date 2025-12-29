@@ -19,14 +19,16 @@ const getBarColor = (den: number) => {
         case 4: return { bg: 'bg-yellow-300', border: 'border-yellow-400', text: 'text-yellow-900' };
         case 5: return { bg: 'bg-green-500', border: 'border-green-600', text: 'text-white' };
         case 6: return { bg: 'bg-teal-400', border: 'border-teal-500', text: 'text-white' };
+        case 7: return { bg: 'bg-indigo-400', border: 'border-indigo-500', text: 'text-white' };
         case 8: return { bg: 'bg-blue-500', border: 'border-blue-600', text: 'text-white' };
+        case 9: return { bg: 'bg-fuchsia-400', border: 'border-fuchsia-500', text: 'text-white' };
         case 10: return { bg: 'bg-purple-500', border: 'border-purple-600', text: 'text-white' };
         case 12: return { bg: 'bg-slate-500', border: 'border-slate-600', text: 'text-white' };
         default: return { bg: 'bg-slate-400', border: 'border-slate-500', text: 'text-white' };
     }
 };
 
-const PRESETS = [1, 2, 3, 4, 5, 6, 8, 10, 12];
+const PRESETS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12];
 
 export const FractionBarsWidget: React.FC<FractionBarsWidgetProps> = ({ isTransparent }) => {
   const [bars, setBars] = useState<FractionBar[]>([

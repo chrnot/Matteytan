@@ -69,7 +69,6 @@ export const MatchstickRiddleWidget: React.FC = () => {
         : (left.sticks > 0 && right.sticks > 0);
 
     if (canRemoveSymmetrically) {
-        // Ta bort från båda samtidigt
         setLeft(prev => ({
             ...prev,
             boxes: type === 'BOX' ? Math.max(0, prev.boxes - 1) : prev.boxes,
@@ -81,11 +80,9 @@ export const MatchstickRiddleWidget: React.FC = () => {
             sticks: type === 'STICK' ? Math.max(0, prev.sticks - 1) : prev.sticks
         }));
         
-        // Blinkning på den "andra" sidan för att visa att den också togs bort
         setFeedbackSide(side === 'L' ? 'R' : 'L');
         setTimeout(() => setFeedbackSide(null), 300);
     } else {
-        // Vanlig borttagning (skapar/behåller obalans)
         const setter = side === 'L' ? setLeft : setRight;
         setter(prev => ({
             ...prev,
@@ -93,6 +90,15 @@ export const MatchstickRiddleWidget: React.FC = () => {
             sticks: type === 'STICK' ? Math.max(0, prev.sticks - 1) : prev.sticks
         }));
     }
+  };
+
+  const manipulate = (side: 'L' | 'R', type: 'BOX' | 'STICK', change: number) => {
+      const setter = side === 'L' ? setLeft : setRight;
+      setter(prev => ({
+          ...prev,
+          boxes: type === 'BOX' ? Math.max(0, Math.min(5, prev.boxes + change)) : prev.boxes,
+          sticks: type === 'STICK' ? Math.max(0, Math.min(20, prev.sticks + change)) : prev.sticks
+      }));
   };
 
   const handleReveal = () => {
@@ -109,7 +115,6 @@ export const MatchstickRiddleWidget: React.FC = () => {
   return (
     <div className="w-full h-full flex flex-col bg-white overflow-hidden select-none font-sans relative">
       
-      {/* Celebration Layer */}
       {celebration && (
           <div className="absolute inset-0 pointer-events-none z-[200] overflow-hidden">
               {Array.from({ length: 40 }).map((_, i) => (
@@ -156,7 +161,6 @@ export const MatchstickRiddleWidget: React.FC = () => {
             </div>
           </div>
 
-          {/* 2. INSTRUKTIONSBANNER */}
           <div className="px-4 pb-4">
               <div className={`p-4 rounded-xl flex gap-4 items-center shadow-sm border transition-all duration-500 ${isRevealed ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-100'}`}>
                 <div className={`p-2 rounded-full shadow-sm text-white transition-colors duration-500 ${isRevealed ? 'bg-green-500' : 'bg-blue-600'}`}>
@@ -168,7 +172,7 @@ export const MatchstickRiddleWidget: React.FC = () => {
                     ) : isIsolated ? (
                         <p className="font-bold text-blue-800 text-lg animate-bounce">Snyggt! Klicka på asken för att se vad som finns inuti.</p>
                     ) : (
-                        <p className="italic text-slate-600 font-medium text-base">"Ta bort samma sak från båda sidor för att isolera tändsticksasken!"</p>
+                        <p className="italic text-slate-600 font-medium text-base">"Ta bort samma sak från båda sidor för att isolera asken!"</p>
                     )}
                 </div>
               </div>
@@ -178,7 +182,6 @@ export const MatchstickRiddleWidget: React.FC = () => {
       {/* 3. ARBETSYTA (VÅGEN) */}
       <div className="flex-1 relative flex flex-col items-center justify-center p-6 bg-slate-50/30 overflow-hidden min-h-[350px]">
           
-          {/* Jämviktsindikator (Fixerad position) */}
           <div className="absolute top-4 right-4 z-[100]">
                <div className={`p-4 rounded-2xl border-2 shadow-lg transition-all duration-500 flex flex-col items-center gap-1 min-w-[110px] ${isBalanced ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-50 border-red-200 text-red-500 animate-pulse'}`}>
                     {isBalanced ? <Icons.Scale size={32} /> : <Icons.Graph size={32} />}
@@ -188,7 +191,6 @@ export const MatchstickRiddleWidget: React.FC = () => {
           </div>
 
           <div className="w-full max-w-[700px] relative mt-16">
-              {/* Horisontell bom */}
               <div 
                 className="w-full h-4 bg-gradient-to-b from-slate-400 to-slate-600 rounded-full relative transition-transform duration-1000 ease-in-out flex shadow-xl z-40"
                 style={{ transform: `rotate(${tilt}deg)` }}
@@ -226,6 +228,14 @@ export const MatchstickRiddleWidget: React.FC = () => {
                           </div>
                       </div>
                       <div className={`w-full h-6 rounded-b-[50px] border-b-[10px] shadow-2xl transition-colors duration-500 ${isBalanced ? 'bg-slate-200 border-slate-400' : 'bg-slate-300 border-slate-500'}`} />
+                      
+                      {/* Kontroller Vänster */}
+                      <div className="absolute -bottom-12 flex gap-1">
+                          <button onClick={() => manipulate('L', 'BOX', 1)} className="p-1 bg-white border rounded text-[9px] font-bold text-blue-600 shadow-sm">+X</button>
+                          <button onClick={() => manipulate('L', 'STICK', 1)} className="p-1 bg-white border rounded text-[9px] font-bold text-slate-600 shadow-sm">+1</button>
+                          <button onClick={() => manipulate('L', 'BOX', -1)} className="p-1 bg-white border rounded text-[9px] font-bold text-red-400 shadow-sm">-X</button>
+                          <button onClick={() => manipulate('L', 'STICK', -1)} className="p-1 bg-white border rounded text-[9px] font-bold text-red-400 shadow-sm">-1</button>
+                      </div>
                   </div>
 
                   {/* Höger vågskål */}
@@ -261,10 +271,17 @@ export const MatchstickRiddleWidget: React.FC = () => {
                           </div>
                       </div>
                       <div className={`w-full h-6 rounded-b-[50px] border-b-[10px] shadow-2xl transition-colors duration-500 ${isBalanced ? 'bg-slate-200 border-slate-400' : 'bg-slate-300 border-slate-500'}`} />
+                      
+                      {/* Kontroller Höger */}
+                      <div className="absolute -bottom-12 flex gap-1">
+                          <button onClick={() => manipulate('R', 'BOX', 1)} className="p-1 bg-white border rounded text-[9px] font-bold text-blue-600 shadow-sm">+X</button>
+                          <button onClick={() => manipulate('R', 'STICK', 1)} className="p-1 bg-white border rounded text-[9px] font-bold text-slate-600 shadow-sm">+1</button>
+                          <button onClick={() => manipulate('R', 'BOX', -1)} className="p-1 bg-white border rounded text-[9px] font-bold text-red-400 shadow-sm">-X</button>
+                          <button onClick={() => manipulate('R', 'STICK', -1)} className="p-1 bg-white border rounded text-[9px] font-bold text-red-400 shadow-sm">-1</button>
+                      </div>
                   </div>
               </div>
 
-              {/* Vågens stativ */}
               <div className="absolute top-[8px] left-1/2 -translate-x-1/2 w-8 h-64 bg-gradient-to-b from-slate-200 via-slate-400 to-slate-600 border-x-2 border-slate-400/30 -z-10 rounded-t-full shadow-inner" />
               <div className="absolute top-[260px] left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-600 rounded-full shadow-2xl -z-10" />
           </div>
@@ -289,7 +306,7 @@ export const MatchstickRiddleWidget: React.FC = () => {
                   </div>
               </div>
               <p className="text-xs text-slate-400 font-bold uppercase tracking-[0.3em] text-center">
-                Klicka på askar eller stickor för att ta bort dem
+                Klicka på askar eller stickor för symmetrisk borttagning
               </p>
           </div>
       </div>
@@ -304,9 +321,6 @@ export const MatchstickRiddleWidget: React.FC = () => {
   );
 };
 
-/**
- * Tändsticksask Komponent
- */
 const Matchbox: React.FC<{
     level: Representation;
     isTarget: boolean;
@@ -326,20 +340,16 @@ const Matchbox: React.FC<{
                 ${isRevealed ? 'scale-110 shadow-2xl border-green-500' : ''}
             `}
         >
-            {/* Realism: Retro etikett (Solstickan-ish) */}
             {level === 'CONCRETE' && !isRevealed && !isXray && (
                 <div className="absolute inset-1 bg-[#f3e3cc] border border-[#5d3a1a]/30 rounded-sm flex items-center justify-center shadow-inner overflow-hidden">
-                    {/* Blå/Gul Dekor */}
                     <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(45deg,_#000_0,_#000_1px,_transparent_0,_transparent_4px)]"></div>
                     <div className="w-12 h-8 bg-blue-600 rounded-full flex items-center justify-center relative border-2 border-yellow-400">
                         <div className="w-6 h-6 bg-yellow-400 rounded-full blur-[2px] opacity-60 animate-pulse"></div>
                     </div>
-                    {/* Plån på sidan (bara visuellt här) */}
                     <div className="absolute bottom-0 left-0 w-full h-1 bg-[#4a2e1a] opacity-50"></div>
                 </div>
             )}
 
-            {/* Innehåll vid rtg eller avslöjande */}
             {(isRevealed || isXray) && (
                 <div className={`absolute inset-0 bg-white/95 rounded-lg flex flex-wrap gap-0.5 p-2 items-center justify-center animate-in zoom-in duration-500 z-10 border-2 ${isRevealed ? 'border-green-400' : 'border-slate-200'}`}>
                     {Array.from({ length: hiddenValue }).map((_, i) => (
@@ -351,9 +361,6 @@ const Matchbox: React.FC<{
     );
 };
 
-/**
- * Tändsticka Komponent
- */
 const Matchstick: React.FC<{
     level: Representation;
     onClick: () => void;

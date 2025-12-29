@@ -21,6 +21,7 @@ interface ToolbarProps {
 }
 
 const WIDGET_BUTTONS = [
+  { type: WidgetType.NUMBER_LINE, icon: Icons.More, label: 'Tallinje' },
   { type: WidgetType.BASE_10, icon: Icons.Cube, label: 'Bas-klossar' },
   { type: WidgetType.NUMBER_BEADS, icon: Icons.Bead, label: 'Pärlband' },
   { type: WidgetType.HUNDRED_CHART, icon: Icons.Grid, label: 'Hundrarutan' },
@@ -28,6 +29,7 @@ const WIDGET_BUTTONS = [
   { type: WidgetType.FRACTION, icon: Icons.Fraction, label: 'Bråk' },
   { type: WidgetType.FRACTION_BARS, icon: Icons.Bars, label: 'Bråkstavar' },
   { type: WidgetType.PERCENTAGE, icon: Icons.Percent, label: 'Procent' },
+  { type: WidgetType.PRIME_BUBBLES, icon: Icons.Zap, label: 'Prim-Bubblor' },
   { type: WidgetType.COORDINATES, icon: Icons.Graph, label: 'Koordinater' },
   { type: WidgetType.PROBABILITY, icon: Icons.Dice, label: 'Sannolikhet' },
   { type: WidgetType.EQUATION, icon: Icons.Scale, label: 'Ekvation' },
@@ -39,13 +41,6 @@ const COLORS = [
   { hex: '#3b82f6', label: 'Blå' },
   { hex: '#10b981', label: 'Grön' },
   { hex: '#f59e0b', label: 'Orange' },
-];
-
-const BACKGROUNDS: BackgroundConfig[] = [
-    { type: 'GRID', label: 'Rutnät', className: 'bg-grid-pattern' },
-    { type: 'DOTS', label: 'Prickar', className: 'bg-dot-pattern' },
-    { type: 'WHITE', label: 'Vit', className: 'bg-white' },
-    { type: 'BLACK', label: 'Svart', className: 'bg-slate-900' },
 ];
 
 export const Toolbar: React.FC<ToolbarProps> = ({ 
@@ -62,8 +57,20 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   setIsEraser,
   onClearDrawings
 }) => {
+  // Set to false by default so it's open on load
+  const [isMinimized, setIsMinimized] = useState(false);
+
+  const handleAddWidget = (type: WidgetType) => {
+    onAddWidget(type);
+    setIsMinimized(true); // Auto-hide after selection to clear space
+  };
+
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[110] flex flex-col items-center gap-4">
+    <div className={`fixed z-[110] flex flex-col gap-3 transition-all duration-500 ease-in-out ${
+      isMinimized 
+        ? 'bottom-6 right-6 items-end' 
+        : 'bottom-3 left-1/2 -translate-x-1/2 items-center w-full px-4'
+    }`}>
       
       {/* Drawing Sub-Toolbar (Conditional) */}
       {isDrawingMode && (
@@ -124,44 +131,56 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       )}
 
       {/* Main Bar Container */}
-      <div className="flex flex-col items-center gap-3">
+      <div className={`flex flex-col gap-2 w-full transition-all duration-500 ${isMinimized ? 'items-end' : 'items-center max-w-[1100px]'}`}>
         
-        {/* Widget Bar */}
-        <div className="bg-white/90 backdrop-blur-md shadow-2xl rounded-2xl p-2 border border-slate-200 flex gap-1 sm:gap-2 items-center overflow-x-auto max-w-[95vw]">
-          {WIDGET_BUTTONS.map((btn) => (
-            <button
-              key={btn.type}
-              onClick={() => onAddWidget(btn.type)}
-              className="flex flex-col items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-xl hover:bg-slate-100 transition-all text-slate-600 hover:text-blue-600 hover:scale-105 active:scale-95 group shrink-0"
-            >
-              <btn.icon size={24} className="mb-1 group-hover:stroke-2" />
-              <span className="text-[10px] font-medium leading-tight text-center px-1">{btn.label}</span>
-            </button>
-          ))}
-        </div>
-
-         {/* Background & Meta Bar */}
-         <div className="flex gap-4 items-center">
-            <div className="bg-white/80 backdrop-blur-sm shadow-lg rounded-full px-4 py-2 flex gap-3">
-                {BACKGROUNDS.map(bg => (
-                    <button 
-                      key={bg.type}
-                      onClick={() => onSetBackground(bg.type)}
-                      className={`w-6 h-6 rounded-full border-2 shadow-sm ${currentBackground === bg.type ? 'border-blue-500 scale-110' : 'border-slate-200'} ${bg.type === 'BLACK' ? 'bg-slate-900' : 'bg-white'}`}
-                      title={bg.label}
-                    >
-                        {bg.type === 'GRID' && <div className="w-full h-full opacity-50 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxwYXRoIGQ9Ik0gNCAwIEwgMCAwIDAgNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjEiLz48L3N2Zz4=')]"></div>}
-                    </button>
-                ))}
+        {isMinimized ? (
+          /* Minimized Trigger Button */
+          <button 
+            onClick={() => setIsMinimized(false)}
+            className="group flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all border-2 border-white/20 animate-in fade-in slide-in-from-right-4 duration-500"
+          >
+            <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors">
+              <Icons.Plus size={16} />
             </div>
-            
-            {/* Legend/Mode hint */}
-            {isDrawingMode && (
-                <div className="px-3 py-2 bg-blue-600 text-white text-[10px] font-black rounded-full shadow-lg animate-pulse uppercase tracking-wider">
-                   Ritläge Aktivt
-                </div>
-            )}
-         </div>
+            <span className="text-xs font-black uppercase tracking-widest pr-1">Fler verktyg</span>
+          </button>
+        ) : (
+          /* Full Widget Bar */
+          <div className="relative w-full animate-in slide-in-from-bottom-8 duration-500 ease-out">
+            {/* Collapse handle / button */}
+            <button 
+               onClick={() => setIsMinimized(true)}
+               className="absolute -top-4 left-1/2 -translate-x-1/2 w-10 h-8 bg-white border-x border-t border-slate-200 rounded-t-xl flex items-center justify-center text-slate-400 hover:text-blue-500 transition-colors shadow-sm z-10"
+               title="Dölj meny"
+            >
+                <Icons.ChevronDown size={20} />
+            </button>
+
+            <div className="bg-white/90 backdrop-blur-md shadow-2xl rounded-2xl p-2 border border-slate-200 flex gap-1 sm:gap-2 items-center overflow-x-auto xl:overflow-x-visible w-full no-scrollbar justify-start xl:justify-center">
+              {WIDGET_BUTTONS.map((btn) => (
+                <button
+                  key={btn.type}
+                  onClick={() => handleAddWidget(btn.type)}
+                  className="flex flex-col items-center justify-center w-16 h-16 sm:w-[82px] sm:h-[82px] rounded-xl hover:bg-slate-100 transition-all text-slate-600 hover:text-blue-600 hover:scale-105 active:scale-95 group shrink-0"
+                >
+                  <btn.icon size={22} className="mb-1 group-hover:stroke-2" />
+                  <span className="text-[9px] sm:text-[10px] font-bold leading-tight text-center px-1 whitespace-nowrap uppercase tracking-tighter">{btn.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+         {/* Status Bar */}
+         {!isMinimized && (
+           <div className="flex gap-4 items-center h-6 pointer-events-none">
+              {isDrawingMode && (
+                  <div className="px-3 py-1 bg-blue-600 text-white text-[9px] font-black rounded-full shadow-lg animate-pulse uppercase tracking-wider">
+                     Ritläge Aktivt
+                  </div>
+              )}
+           </div>
+         )}
       </div>
     </div>
   );

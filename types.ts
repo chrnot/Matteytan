@@ -18,6 +18,8 @@ export enum WidgetType {
   SHAPES = 'SHAPES',
   FRACTION_BARS = 'FRACTION_BARS',
   MATH_WORKSHOP = 'MATH_WORKSHOP',
+  PRIME_BUBBLES = 'PRIME_BUBBLES',
+  CHANCE_GENERATOR = 'CHANCE_GENERATOR',
 }
 
 export interface WidgetInstance {

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 import { Icons } from '../icons';
 
 interface NumberLineWidgetProps {
@@ -12,314 +12,236 @@ interface Jump {
     end: number;
     label: string;
     id: number;
+    color: string;
 }
 
 export const NumberLineWidget: React.FC<NumberLineWidgetProps> = ({ isTransparent, setTransparent }) => {
-  const [range, setRange] = useState({ min: -10, max: 20 });
+  // Start centered around 0 with a comfortable initial range
+  const [range, setRange] = useState({ min: -25, max: 25 });
   const [scale, setScale] = useState(1); 
   const [jumps, setJumps] = useState<Jump[]>([]);
-  const [stepSize, setStepSize] = useState(1);
-  const [expression, setExpression] = useState('');
-  const [error, setError] = useState('');
+  const [markerPos, setMarkerPos] = useState(0);
+  const [snapToInteger, setSnapToInteger] = useState(true);
+  const [hoverVal, setHoverVal] = useState<number | null>(null);
   
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
 
-  const totalUnits = range.max - range.min;
-  const baseWidthPerUnit = 40; 
+  const baseWidthPerUnit = 60; 
   const widthPerUnit = baseWidthPerUnit * scale; 
-  const totalWidth = totalUnits * widthPerUnit + 100;
-  
-  const LINE_Y = 160; 
+  const totalUnits = range.max - range.min;
+  const totalWidth = totalUnits * widthPerUnit + 200; // Padding
+  const LINE_Y = 140; 
 
-  // Helper to get X coordinate based on number value
-  const getX = (val: number) => {
-    return (val - range.min) * widthPerUnit + 50;
-  };
-
-  // Center the view on 0 when component mounts
-  useEffect(() => {
-    if (scrollContainerRef.current) {
-        const zeroX = getX(0);
-        const containerWidth = scrollContainerRef.current.clientWidth;
-        // Small timeout to ensure layout is ready
-        setTimeout(() => {
-            if (scrollContainerRef.current) {
-                scrollContainerRef.current.scrollLeft = zeroX - containerWidth / 2;
-            }
-        }, 50);
-    }
+  // Hjälpfunktion för att få intern SVG-koordinat från mus-event
+  const getSVGPoint = useCallback((clientX: number, clientY: number) => {
+    if (!svgRef.current) return { x: 0, y: 0 };
+    const svg = svgRef.current;
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    
+    // Transformera skärmpixel till SVG-koordinat med hänsyn till allt (scroll, zoom, CSS)
+    const transformedPt = pt.matrixTransform(svg.getScreenCTM()?.inverse());
+    return transformedPt;
   }, []);
 
-  const addManualJump = (direction: 'left' | 'right') => {
-    const lastPos = jumps.length > 0 ? jumps[jumps.length - 1].end : 0;
-    const change = direction === 'right' ? stepSize : -stepSize;
-    const newJump: Jump = { 
-        start: lastPos, 
-        end: lastPos + change, 
-        label: direction === 'right' ? `+${stepSize}` : `-${stepSize}`,
-        id: Date.now() 
+  const getX = useCallback((val: number) => {
+    return (val - range.min) * widthPerUnit + 100;
+  }, [range.min, widthPerUnit]);
+
+  const getValFromX = useCallback((svgX: number) => {
+    const val = (svgX - 100) / widthPerUnit + range.min;
+    return snapToInteger ? Math.round(val) : Math.round(val * 10) / 10;
+  }, [range.min, widthPerUnit, snapToInteger]);
+
+  // Centrera nollan direkt vid start
+  useLayoutEffect(() => {
+    const timer = setTimeout(() => {
+        if (scrollContainerRef.current) {
+            const targetX = getX(0);
+            const containerWidth = scrollContainerRef.current.clientWidth;
+            scrollContainerRef.current.scrollLeft = targetX - containerWidth / 2;
+        }
+    }, 50); // Liten delay för att säkerställa att layouten är klar
+    return () => clearTimeout(timer);
+  }, []); 
+
+  const addJump = (to: number) => {
+    if (to === markerPos) return;
+    
+    const diff = to - markerPos;
+    const isPositive = diff > 0;
+    const label = isPositive ? `+${snapToInteger ? diff : diff.toFixed(1)}` : `${snapToInteger ? diff : diff.toFixed(1)}`;
+    
+    const newJump: Jump = {
+        start: markerPos,
+        end: to,
+        label,
+        id: Date.now(),
+        color: isPositive ? '#10b981' : '#ef4444'
     };
-    setJumps([...jumps, newJump]);
-    
-    // Auto-expand range if jump goes out of bounds
-    if (newJump.end > range.max) setRange(r => ({ ...r, max: Math.ceil(newJump.end + 5) }));
-    if (newJump.end < range.min) setRange(r => ({ ...r, min: Math.floor(newJump.end - 5) }));
+
+    setJumps(prev => [...prev, newJump]);
+    setMarkerPos(to);
+
+    // Expandera intervallet om vi rör oss mot kanterna
+    if (to > range.max - 3) setRange(r => ({ ...r, max: Math.ceil(to + 15) }));
+    if (to < range.min + 3) setRange(r => ({ ...r, min: Math.floor(to - 15) }));
   };
 
-  const handleEvaluate = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    
-    if (!expression.trim()) return;
+  const handleLineClick = (e: React.MouseEvent) => {
+    const pt = getSVGPoint(e.clientX, e.clientY);
+    const val = getValFromX(pt.x);
+    addJump(val);
+  };
 
-    try {
-        let cleanExpr = expression.replace(/\s+/g, '');
-        
-        // Match numbers and operators
-        const regex = /(-?\d+)|([\+\-])/g;
-        const matches = cleanExpr.match(regex);
-        
-        if (!matches) throw new Error("Ogiltigt uttryck");
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const pt = getSVGPoint(e.clientX, e.clientY);
+    setHoverVal(getValFromX(pt.x));
+  };
 
-        const newJumps: Jump[] = [];
-        let currentPos = 0;
-        
-        let i = 0;
-        let firstVal = parseInt(matches[0], 10);
-        
-        // Handle if first token is a sign
-        if (isNaN(firstVal)) {
-            const sign = matches[0];
-            const val = parseInt(matches[1], 10);
-            firstVal = sign === '-' ? -val : val;
-            i = 2;
-        } else {
-            i = 1;
-        }
-
-        if (firstVal !== 0) {
-            newJumps.push({
-                start: 0,
-                end: firstVal,
-                label: firstVal > 0 ? `+${firstVal}` : firstVal.toString(),
-                id: Date.now()
-            });
-            currentPos = firstVal;
-        }
-
-        for (; i < matches.length; i += 2) {
-            const operator = matches[i];
-            const nextValToken = matches[i + 1];
-            if (!nextValToken) break;
-
-            const val = parseInt(nextValToken, 10);
-            let jumpVal = (operator === '-') ? -val : val;
-            
-            const nextPos = currentPos + jumpVal;
-            newJumps.push({
-                start: currentPos,
-                end: nextPos,
-                label: `${operator}${val}`,
-                id: Date.now() + i
-            });
-            currentPos = nextPos;
-        }
-
-        setJumps(newJumps);
-        
-        const allCoords = [0, ...newJumps.map(j => j.end), ...newJumps.map(j => j.start)];
-        const minCoord = Math.min(...allCoords);
-        const maxCoord = Math.max(...allCoords);
-        
-        setRange({
-            min: Math.min(range.min, Math.floor(minCoord - 5)),
-            max: Math.max(range.max, Math.ceil(maxCoord + 5))
-        });
-
-    } catch (err) {
-        setError("Kunde inte tolka. Skriv t.ex: 5 + 3 - 2");
+  const undoLastJump = () => {
+    if (jumps.length === 0) {
+        setMarkerPos(0);
+        return;
     }
+    const newJumps = [...jumps];
+    const last = newJumps.pop();
+    setJumps(newJumps);
+    setMarkerPos(last ? last.start : 0);
   };
 
-  const clearJumps = () => {
-    setJumps([]);
-    setExpression('');
-    setError('');
-  };
+  const equation = jumps.length > 0 
+    ? jumps[0].start + " " + jumps.map(j => (j.label.startsWith('+') ? "+ " + j.label.substring(1) : "- " + j.label.substring(1))).join(" ") + " = " + markerPos
+    : markerPos.toString();
 
   return (
-    <div className="w-full h-full flex flex-col gap-2 overflow-hidden bg-white">
+    <div className="w-full h-full flex flex-col gap-3 overflow-hidden bg-white select-none">
       
-      {/* Expression & Controls */}
-      <div className="flex flex-col gap-2 bg-slate-50 p-2 sm:p-3 rounded-xl border border-slate-200 shrink-0">
-        
-        <form onSubmit={handleEvaluate} className="flex gap-2 w-full">
-            <div className="relative flex-1">
-                <input 
-                    type="text"
-                    value={expression}
-                    onChange={(e) => setExpression(e.target.value)}
-                    placeholder="Skriv uttryck: 10 - 3 + 5"
-                    className={`w-full bg-white border ${error ? 'border-red-300 ring-1 ring-red-100' : 'border-slate-300'} rounded-lg px-3 py-1.5 font-mono font-bold text-slate-700 text-sm outline-none focus:border-blue-500 transition-all`}
-                />
-                {error && <div className="absolute -bottom-5 left-1 text-[9px] font-bold text-red-500">{error}</div>}
+      {/* 1. Header & Equation Bar */}
+      <div className="flex flex-col gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200 shrink-0 shadow-sm">
+        <div className="flex justify-between items-center mb-1">
+            <div className="flex items-center gap-3">
+                <div className="bg-white px-4 py-1.5 rounded-xl border-2 border-blue-100 shadow-sm">
+                    <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest block leading-none mb-1">Position</span>
+                    <span className="text-2xl font-black text-slate-800 tabular-nums">{markerPos}</span>
+                </div>
+                {jumps.length > 0 && (
+                    <div className="hidden sm:flex items-center gap-2 bg-blue-600 px-4 py-2 rounded-xl text-white shadow-lg animate-in slide-in-from-left-4">
+                        <Icons.Math size={18} className="opacity-70" />
+                        <span className="text-sm font-black font-mono">{equation}</span>
+                    </div>
+                )}
             </div>
-            <button 
-                type="submit"
-                className="bg-blue-600 text-white px-4 py-1.5 rounded-lg font-bold hover:bg-blue-700 text-xs transition-all shadow-sm active:scale-95 whitespace-nowrap"
-            >
-                Visa Hopp
-            </button>
-        </form>
+            
+            <div className="flex gap-1.5">
+                <button onClick={() => setScale(s => Math.max(0.4, s - 0.2))} className="p-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 shadow-sm" title="Zooma ut"><Icons.Minimize size={18} /></button>
+                <button onClick={() => setScale(s => Math.min(2.5, s + 0.2))} className="p-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 shadow-sm" title="Zooma in"><Icons.Plus size={18} /></button>
+                <div className="w-px h-8 bg-slate-200 mx-1"></div>
+                <button onClick={undoLastJump} disabled={jumps.length === 0} className="p-2 bg-white border border-slate-200 rounded-lg text-amber-600 hover:bg-amber-50 disabled:opacity-30 shadow-sm" title="Ångra"><Icons.Reset size={18} /></button>
+                <button onClick={() => { setJumps([]); setMarkerPos(0); }} className="p-2 bg-white border border-slate-200 rounded-lg text-red-500 hover:bg-red-50 shadow-sm" title="Rensa"><Icons.Trash size={18} /></button>
+            </div>
+        </div>
 
-        <div className="flex flex-wrap gap-2 items-center justify-between">
-            <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Steg:</span>
-                    <input 
-                        type="number" 
-                        min="1" 
-                        value={stepSize} 
-                        onChange={(e) => setStepSize(Math.max(1, Number(e.target.value)))}
-                        className="w-10 border rounded px-1 text-xs font-bold text-center h-7"
-                    />
+        <div className="flex items-center gap-4 px-1">
+            <label className="flex items-center gap-2 cursor-pointer">
+                <div className={`w-10 h-5 rounded-full transition-colors relative ${snapToInteger ? 'bg-blue-600' : 'bg-slate-300'}`}>
+                    <input type="checkbox" checked={snapToInteger} onChange={e => setSnapToInteger(e.target.checked)} className="sr-only" />
+                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-transform ${snapToInteger ? 'left-6' : 'left-1'}`}></div>
                 </div>
-                <div className="flex gap-1">
-                    <button onClick={() => addManualJump('left')} className="p-1.5 bg-white border rounded hover:bg-slate-50 text-slate-600 shadow-sm">
-                        <Icons.Minimize size={14} />
-                    </button>
-                    <button onClick={() => addManualJump('right')} className="p-1.5 bg-white border rounded hover:bg-slate-50 text-slate-600 shadow-sm">
-                        <Icons.Plus size={14} />
-                    </button>
-                </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-                 <div className="flex items-center gap-1 border-r pr-2 border-slate-200">
-                    <input 
-                        type="number" 
-                        value={range.min} 
-                        onChange={e => setRange(p => ({...p, min: Number(e.target.value)}))}
-                        className="w-12 border rounded px-1 text-xs text-center h-7 font-bold text-slate-500"
-                    />
-                    <span className="text-slate-300">...</span>
-                    <input 
-                        type="number" 
-                        value={range.max} 
-                        onChange={e => setRange(p => ({...p, max: Number(e.target.value)}))}
-                        className="w-12 border rounded px-1 text-xs text-center h-7 font-bold text-slate-500"
-                    />
-                </div>
-                <button onClick={clearJumps} className="p-1.5 text-red-500 hover:bg-red-50 rounded transition-colors" title="Rensa">
-                    <Icons.Trash size={16} />
-                </button>
-            </div>
+                <span className="text-[10px] font-black text-slate-500 uppercase">Hela tal</span>
+            </label>
         </div>
       </div>
 
-      {/* Number Line Visualizer */}
+      {/* 2. Number Line Visualization */}
       <div 
         ref={scrollContainerRef}
-        className="flex-1 overflow-x-auto border-2 border-slate-100 rounded-xl bg-slate-50/30 relative select-none scrollbar-thin w-full min-h-0"
+        className="flex-1 overflow-x-auto border-2 border-slate-100 rounded-2xl bg-slate-50/20 relative select-none scrollbar-thin w-full min-h-0"
       >
         <svg 
-            width={Math.max(totalWidth, 800)} 
+            ref={svgRef}
+            width={totalWidth} 
             height="100%" 
-            viewBox={`0 0 ${Math.max(totalWidth, 800)} 280`} 
-            preserveAspectRatio="xMinYMid meet" 
-            className="min-h-[250px]"
+            viewBox={`0 0 ${totalWidth} 260`} 
+            className="cursor-crosshair block"
+            onClick={handleLineClick}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={() => setHoverVal(null)}
         >
-          {/* Main Axis Line */}
-          <line x1="0" y1={LINE_Y} x2={Math.max(totalWidth, 800)} y2={LINE_Y} stroke="#334155" strokeWidth="2.5" />
+          {/* Transparent klickbar bakgrund */}
+          <rect x="0" y="0" width={totalWidth} height="260" fill="transparent" />
+
+          {/* Tallinjen */}
+          <line x1="0" y1={LINE_Y} x2={totalWidth} y2={LINE_Y} stroke="#334155" strokeWidth="3" strokeLinecap="round" className="pointer-events-none" />
           
-          {/* Ticks & Labels */}
+          {/* Graderingar & Siffror */}
           {Array.from({ length: totalUnits + 1 }).map((_, i) => {
             const val = range.min + i;
             const x = getX(val);
             const isZero = val === 0;
             const isMajor = val % 5 === 0;
-            
+            const shouldShowLabel = scale < 0.6 ? isMajor : true;
+
             return (
-              <g key={val}>
+              <g key={val} className="pointer-events-none">
                 <line 
-                    x1={x} y1={LINE_Y - (isMajor ? 12 : 8)} x2={x} y2={LINE_Y + (isMajor ? 12 : 8)} 
+                    x1={x} y1={LINE_Y - (isMajor ? 12 : 6)} x2={x} y2={LINE_Y + (isMajor ? 12 : 6)} 
                     stroke={isZero ? "#000" : (isMajor ? "#475569" : "#cbd5e1")} 
-                    strokeWidth={isZero ? 3 : (isMajor ? 2 : 1)} 
+                    strokeWidth={isZero ? 4 : (isMajor ? 2 : 1)} 
                 />
-                {(isMajor || isZero || Math.abs(val) < 5) && (
-                    <text 
-                        x={x} y={LINE_Y + 32} 
-                        textAnchor="middle" 
-                        fontSize={isZero ? 16 : 12} 
-                        fill={isZero ? '#000' : '#64748b'} 
-                        fontWeight={isZero || isMajor ? '800' : 'bold'}
-                        className="font-mono"
-                    >
-                    {val}
+                {shouldShowLabel && (
+                    <text x={x} y={LINE_Y + 36} textAnchor="middle" fontSize={isZero ? 18 : (isMajor ? 14 : 12)} fill={isZero ? '#000' : (isMajor ? '#334155' : '#94a3b8')} fontWeight={isZero || isMajor ? '900' : 'bold'} className="font-mono">
+                        {val}
                     </text>
                 )}
               </g>
             );
           })}
 
-          {/* Jump Paths - DASHED STYLE */}
+          {/* Hover-indikator (Hjälper användaren att se exakt klick) */}
+          {hoverVal !== null && (
+              <g transform={`translate(${getX(hoverVal)}, ${LINE_Y})`} className="pointer-events-none">
+                <circle r="8" fill="#3b82f6" opacity="0.2" className="animate-pulse" />
+                <line y1="-10" y2="10" stroke="#3b82f6" strokeWidth="2" opacity="0.5" />
+              </g>
+          )}
+
+          {/* Båghopp */}
           {jumps.map((jump, index) => {
             const x1 = getX(jump.start);
             const x2 = getX(jump.end);
             const midX = (x1 + x2) / 2;
-            const diff = jump.end - jump.start;
-            const isPositive = diff > 0;
-            
-            const baseHeight = Math.min(Math.abs(x2 - x1) * 0.5, 80);
-            const heightMultiplier = 1 + (index % 3) * 0.2;
-            const height = baseHeight * heightMultiplier;
+            const diff = Math.abs(jump.end - jump.start);
+            const height = Math.min(diff * 12 * scale, 120) + (index % 3) * 10;
 
             return (
-              <g key={jump.id} className="animate-in fade-in zoom-in duration-500">
-                <path 
-                    d={`M ${x1} ${LINE_Y} Q ${midX} ${LINE_Y - height} ${x2} ${LINE_Y}`} 
-                    fill="none" 
-                    stroke={isPositive ? "#10b981" : "#ef4444"} 
-                    strokeWidth="3"
-                    strokeDasharray="6,4"
-                    strokeLinecap="round"
-                    markerEnd={`url(#arrowhead-${isPositive ? 'green' : 'red'})`}
-                    className="transition-all"
-                />
-                <g transform={`translate(${midX}, ${LINE_Y - (height / 2) - 20})`}>
-                    <rect 
-                        x="-20" y="-10" width="40" height="20" rx="6" 
-                        fill="white" stroke={isPositive ? "#10b981" : "#ef4444"} strokeWidth="1.5"
-                        className="shadow-sm"
-                    />
-                    <text 
-                        textAnchor="middle" 
-                        y="4"
-                        fontSize="12" 
-                        fill={isPositive ? "#065f46" : "#991b1b"} 
-                        fontWeight="black"
-                        className="font-mono"
-                    >
-                        {jump.label}
-                    </text>
+              <g key={jump.id} className="pointer-events-none animate-in fade-in duration-300">
+                <path d={`M ${x1} ${LINE_Y} Q ${midX} ${LINE_Y - height} ${x2} ${LINE_Y}`} fill="none" stroke={jump.color} strokeWidth="3.5" strokeDasharray={scale < 0.8 ? "none" : "8,5"} strokeLinecap="round" />
+                <g transform={`translate(${midX}, ${LINE_Y - (height / 2) - 15})`}>
+                    <rect x="-18" y="-10" width="36" height="20" rx="6" fill="white" stroke={jump.color} strokeWidth="2" />
+                    <text textAnchor="middle" y="4" fontSize="11" fill={jump.color} fontWeight="900" className="font-mono">{jump.label}</text>
                 </g>
               </g>
             );
           })}
 
-          <defs>
-            <marker id="arrowhead-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-              <polygon points="0 0, 10 3.5, 0 7" fill="#10b981" />
-            </marker>
-             <marker id="arrowhead-red" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-              <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" />
-            </marker>
-          </defs>
+          {/* Aktuell Markör (Pucken) */}
+          <g transform={`translate(${getX(markerPos)}, ${LINE_Y})`} className="transition-transform duration-500 ease-out pointer-events-none">
+             <circle r="12" fill="#3b82f6" stroke="white" strokeWidth="3" className="shadow-lg" />
+             <circle r="18" fill="rgba(59, 130, 246, 0.2)" className="animate-pulse" />
+          </g>
         </svg>
       </div>
       
-      <div className="px-2 py-1 text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center shrink-0">
-          Tallinjen startar alltid på 0 • Dra i linjen för att se fler tal
+      {/* 3. Footer */}
+      <div className="px-4 py-2 bg-slate-100/50 rounded-xl flex justify-between items-center shrink-0">
+          <div className="flex gap-4">
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500"></div><span className="text-[10px] font-black text-slate-500 uppercase">Addition</span></div>
+              <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-red-500"></div><span className="text-[10px] font-black text-slate-500 uppercase">Subtraktion</span></div>
+          </div>
+          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Klicka på tallinjen för att hoppa</span>
       </div>
     </div>
   );
