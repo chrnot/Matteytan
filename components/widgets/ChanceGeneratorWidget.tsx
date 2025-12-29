@@ -22,6 +22,10 @@ export const ChanceGeneratorWidget: React.FC<ChanceGeneratorWidgetProps> = ({ is
     const [coinFlipping, setCoinFlipping] = useState(false);
     const [displayNum, setDisplayNum] = useState<number>(1);
 
+    const addHistory = (type: Mode, value: string | number) => {
+        setHistory(prev => [{ type, value }, ...prev].slice(0, 5));
+    };
+
     // Rotation values for each dice face
     const getRotation = (val: number) => {
         switch(val) {
@@ -41,7 +45,6 @@ export const ChanceGeneratorWidget: React.FC<ChanceGeneratorWidgetProps> = ({ is
 
         if (mode === 'DICE') {
             const next = Math.floor(Math.random() * 6) + 1;
-            // First set a random high rotation for the "rolling" effect
             setTimeout(() => {
                 setResult(next);
                 addHistory('DICE', next);
@@ -56,25 +59,21 @@ export const ChanceGeneratorWidget: React.FC<ChanceGeneratorWidgetProps> = ({ is
                     clearInterval(interval);
                     const final = Math.floor(Math.random() * 9) + 1;
                     setDisplayNum(final);
-                    setHistory(prev => [{ type: 'NUMBER', value: final }, ...prev].slice(0, 5));
+                    addHistory('NUMBER', final);
                     setIsAnimating(false);
                 }
             }, 60);
         } else if (mode === 'COIN') {
             setCoinFlipping(true);
             const isHeads = Math.random() > 0.5;
-            const final = isHeads ? 'Krona' : 'Klave';
+            const finalLabel = isHeads ? 'Krona' : 'Klave';
             setTimeout(() => {
-                setHistory(prev => [{ type: 'COIN', value: final }, ...prev].slice(0, 5));
-                setResult(isHeads ? 1 : 2); // Result index for coin
+                addHistory('COIN', finalLabel);
+                setResult(isHeads ? 1 : 2); 
                 setIsAnimating(false);
                 setCoinFlipping(false);
             }, 1000);
         }
-    };
-
-    const addHistory = (type: Mode, value: string | number) => {
-        setHistory(prev => [{ type, value }, ...prev].slice(0, 5));
     };
 
     const reset = () => {
@@ -262,8 +261,6 @@ export const ChanceGeneratorWidget: React.FC<ChanceGeneratorWidgetProps> = ({ is
                     0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
                     100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg); }
                 }
-
-                .rotate-y-720 { transform: rotateY(720deg); }
             `}</style>
         </div>
     );
