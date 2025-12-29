@@ -335,6 +335,21 @@ const App: React.FC = () => {
           </button>
       </div>
 
+      {/* Watermark CC0 & Netlify */}
+      <div className="fixed bottom-2 right-6 z-[120] flex flex-col items-end select-none">
+          <span className="text-[10px] font-semibold tracking-[0.2em] uppercase text-slate-400 opacity-60 pointer-events-none">
+            CC0 1.0 Universal
+          </span>
+          <a 
+            href="https://www.netlify.com/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-[10px] font-semibold tracking-[0.2em] uppercase text-slate-400 opacity-60 hover:opacity-100 hover:text-blue-500 transition-all cursor-pointer"
+          >
+            This site is powered by Netlify
+          </a>
+      </div>
+
       {/* About Modal */}
       {showAbout && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-8 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
@@ -355,7 +370,7 @@ const App: React.FC = () => {
                   <div className="flex-1 overflow-y-auto p-6 sm:p-10 space-y-8 scrollbar-thin">
                       <section>
                           <p className="text-slate-600 leading-relaxed italic border-l-4 border-blue-100 pl-4">
-                              Välkommen till Matteytan. Vi vet att matematiklärare ofta tvingas hoppa mellan olika flikar, fysiska plockmaterial och statiska presentationer för att få fram sin poäng. Matteytan är lösningen på det problemet – en samlad, digital startpunkt för dina lektioner.
+                              Välkommen till Matteytan. Vi vet att matematiklärare ofta tvingas hoppa mellan olika flikar, fysiska plockmaterial och statiska presentationer för att få fram sin poäng. Matteytan är lösningen på det prover – en samlad, digital startpunkt för dina lektioner.
                           </p>
                       </section>
 
