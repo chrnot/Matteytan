@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Icons } from '../icons';
 
@@ -27,51 +28,51 @@ export const NumberBeadsWidget: React.FC<NumberBeadsWidgetProps> = ({ isTranspar
     // 1-based index for logic
     const i = index + 1;
     
-    // Standard Coloring (5-grouping: Red, Blue, Red, Blue)
-    const isRedGroup = (i <= 5) || (i > 10 && i <= 15);
-    const baseColorStart = isRedGroup ? '#ef4444' : '#3b82f6'; // red-500 : blue-500
-    const baseColorEnd = isRedGroup ? '#991b1b' : '#1e3a8a';   // red-800 : blue-900
-
-    // Addition specific color (Green for the added part)
-    const addColorStart = '#22c55e'; // green-500
-    const addColorEnd = '#14532d';   // green-900
-
     let isActive = false;
-    let isAddedPart = false;
-    let isSubtractedPart = false;
+    let colorStart = '#94a3b8'; // default slate
+    let colorEnd = '#475569';
+    let isCrossed = false;
 
     // Logic based on mode
     if (activeTab === 'COUNT') {
         isActive = i <= countVal;
+        // Standard pedagogical 5-grouping for counting
+        const isRedGroup = (i <= 5) || (i > 10 && i <= 15);
+        colorStart = isRedGroup ? '#ef4444' : '#3b82f6'; // red-500 : blue-500
+        colorEnd = isRedGroup ? '#991b1b' : '#1e3a8a';   // red-800 : blue-900
     } else if (activeTab === 'ADD') {
+        isActive = i <= (addA + addB);
         if (i <= addA) {
-            isActive = true; // First part
+            // Term 1: Always Blue
+            colorStart = '#3b82f6';
+            colorEnd = '#1e3a8a';
         } else if (i <= addA + addB) {
-            isActive = true;
-            isAddedPart = true; // Second part (Green)
+            // Term 2: Always Green
+            colorStart = '#22c55e';
+            colorEnd = '#14532d';
         }
     } else if (activeTab === 'SUB') {
-        if (i <= subTotal) {
-            isActive = true;
-            // The last 'subTake' beads of the 'subTotal' are marked as subtracted
-            if (i > subTotal - subTake) {
-                isSubtractedPart = true;
-            }
+        isActive = i <= subTotal;
+        if (i <= (subTotal - subTake)) {
+            // Remaining part (Result): Blue
+            colorStart = '#3b82f6';
+            colorEnd = '#1e3a8a';
+        } else if (i <= subTotal) {
+            // Subtracted part (Term 2): Red
+            colorStart = '#ef4444';
+            colorEnd = '#991b1b';
+            isCrossed = true;
         }
     }
 
-    // Determine Gradient Colors
-    const start = isAddedPart ? addColorStart : baseColorStart;
-    const end = isAddedPart ? addColorEnd : baseColorEnd;
-
     return {
       style: {
-        background: `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9) 0%, ${start} 25%, ${end} 100%)`,
+        background: `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9) 0%, ${colorStart} 25%, ${colorEnd} 100%)`,
         opacity: isActive ? 1 : 0.2,
         transform: isActive ? 'scale(1)' : 'scale(0.9)',
         boxShadow: isActive ? '0 4px 6px rgba(0,0,0,0.3)' : 'none'
       },
-      isSubtracted: isSubtractedPart,
+      isSubtracted: isCrossed,
       isActive
     };
   };
@@ -81,8 +82,6 @@ export const NumberBeadsWidget: React.FC<NumberBeadsWidgetProps> = ({ isTranspar
       if (activeTab === 'COUNT') {
           setCountVal(val);
       }
-      // Click interaction for ADD/SUB is ambiguous, so we disable direct bead click for those modes
-      // to encourage using the sliders for specific concept building.
   };
 
   return (
@@ -118,8 +117,8 @@ export const NumberBeadsWidget: React.FC<NumberBeadsWidgetProps> = ({ isTranspar
            )}
            {activeTab === 'ADD' && (
                <div className="flex items-center gap-3 text-5xl font-black">
-                   <span className="text-slate-800">{addA}</span>
-                   <span className="text-green-600">+</span>
+                   <span className="text-blue-600">{addA}</span>
+                   <span className="text-slate-400">+</span>
                    <span className="text-green-600">{addB}</span>
                    <span className="text-slate-400">=</span>
                    <span className="text-slate-800">{addA + addB}</span>
@@ -127,8 +126,8 @@ export const NumberBeadsWidget: React.FC<NumberBeadsWidgetProps> = ({ isTranspar
            )}
            {activeTab === 'SUB' && (
                <div className="flex items-center gap-3 text-5xl font-black">
-                   <span className="text-slate-800">{subTotal}</span>
-                   <span className="text-red-500">-</span>
+                   <span className="text-blue-600">{subTotal}</span>
+                   <span className="text-slate-400">-</span>
                    <span className="text-red-500">{subTake}</span>
                    <span className="text-slate-400">=</span>
                    <span className="text-slate-800">{subTotal - subTake}</span>
@@ -146,7 +145,7 @@ export const NumberBeadsWidget: React.FC<NumberBeadsWidgetProps> = ({ isTranspar
           {/* The Beads */}
           <div className="relative z-10 flex justify-between w-full">
             {Array.from({ length: MAX_BEADS }).map((_, index) => {
-               const { style, isSubtracted, isActive } = getBeadStyle(index);
+               const { style, isSubtracted } = getBeadStyle(index);
                return (
                 <div 
                     key={index}
@@ -159,7 +158,7 @@ export const NumberBeadsWidget: React.FC<NumberBeadsWidgetProps> = ({ isTranspar
                 >
                     {/* Subtraction Cross Overlay */}
                     {isSubtracted && (
-                        <Icons.Close className="text-slate-900 drop-shadow-md w-5 h-5 opacity-60" strokeWidth={3} />
+                        <Icons.Close className="text-white drop-shadow-md w-5 h-5 opacity-80" strokeWidth={3} />
                     )}
                 </div>
                );
@@ -191,7 +190,7 @@ export const NumberBeadsWidget: React.FC<NumberBeadsWidgetProps> = ({ isTranspar
           {activeTab === 'ADD' && (
               <div className="grid grid-cols-2 gap-8">
                   <div className="flex flex-col gap-1">
-                      <label className="text-xs font-bold text-slate-500 uppercase">Term 1 (Start)</label>
+                      <label className="text-xs font-bold text-blue-600 uppercase">Term 1 (Blå)</label>
                       <input 
                         type="range" min="0" max="20" 
                         value={addA}
@@ -201,11 +200,11 @@ export const NumberBeadsWidget: React.FC<NumberBeadsWidgetProps> = ({ isTranspar
                             // Adjust B so sum doesn't exceed 20
                             if (val + addB > 20) setAddB(20 - val);
                         }}
-                        className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-700"
+                        className="w-full h-3 bg-blue-100 rounded-lg appearance-none cursor-pointer accent-blue-600"
                       />
                   </div>
                   <div className="flex flex-col gap-1">
-                      <label className="text-xs font-bold text-green-600 uppercase">Term 2 (Lägg till)</label>
+                      <label className="text-xs font-bold text-green-600 uppercase">Term 2 (Grön)</label>
                       <input 
                         type="range" min="0" max={20 - addA} 
                         value={addB}
@@ -220,7 +219,7 @@ export const NumberBeadsWidget: React.FC<NumberBeadsWidgetProps> = ({ isTranspar
           {activeTab === 'SUB' && (
                <div className="grid grid-cols-2 gap-8">
                   <div className="flex flex-col gap-1">
-                      <label className="text-xs font-bold text-slate-500 uppercase">Term 1 (Totalt)</label>
+                      <label className="text-xs font-bold text-blue-600 uppercase">Hela (Blå)</label>
                       <input 
                         type="range" min="0" max="20" 
                         value={subTotal}
@@ -230,11 +229,11 @@ export const NumberBeadsWidget: React.FC<NumberBeadsWidgetProps> = ({ isTranspar
                             // Adjust take so we don't take more than we have
                             if (subTake > val) setSubTake(val);
                         }}
-                        className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-700"
+                        className="w-full h-3 bg-blue-100 rounded-lg appearance-none cursor-pointer accent-blue-600"
                       />
                   </div>
                   <div className="flex flex-col gap-1">
-                      <label className="text-xs font-bold text-red-500 uppercase">Term 2 (Ta bort)</label>
+                      <label className="text-xs font-bold text-red-500 uppercase">Ta bort (Röd)</label>
                       <input 
                         type="range" min="0" max={subTotal} 
                         value={subTake}
@@ -246,7 +245,7 @@ export const NumberBeadsWidget: React.FC<NumberBeadsWidgetProps> = ({ isTranspar
           )}
           
           <div className="text-center text-[10px] text-slate-400">
-              {activeTab === 'COUNT' ? 'Dra i reglaget eller klicka på pärlorna.' : 'Justera reglagen för att bygga din uträkning.'}
+              {activeTab === 'COUNT' ? 'Dra i reglaget eller klicka på pärlorna.' : 'Justera reglagen för att bygga din uträkning med tydliga färger.'}
           </div>
       </div>
 
