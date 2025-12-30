@@ -319,7 +319,7 @@ const App: React.FC = () => {
         onClearDrawings={() => drawingCanvasRef.current?.clear()}
       />
 
-      {/* Footer Links */}
+      {/* Footer Links (Center) */}
       <div className="fixed bottom-2 left-1/2 -translate-x-1/2 z-[120] flex items-center gap-6">
           <button 
             onClick={() => setShowAbout(true)}
@@ -335,11 +335,20 @@ const App: React.FC = () => {
           </button>
       </div>
 
-      {/* Watermark CC0 & Netlify */}
-      <div className="fixed bottom-2 right-6 z-[120] flex flex-col items-end select-none">
-          <span className="text-[10px] font-semibold tracking-[0.2em] uppercase text-slate-400 opacity-60 pointer-events-none">
+      {/* Watermark CC0 (Left) */}
+      <div className="fixed bottom-2 left-6 z-[120] flex items-center gap-2 select-none pointer-events-none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-slate-400 opacity-60">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M10 9a3 3 0 1 0 0 6"></path>
+            <path d="M14 9a3 3 0 1 0 0 6"></path>
+          </svg>
+          <span className="text-[10px] font-semibold tracking-[0.2em] uppercase text-slate-400 opacity-60">
             CC0 1.0 Universal
           </span>
+      </div>
+
+      {/* Netlify Link (Right) */}
+      <div className="fixed bottom-2 right-6 z-[120] flex flex-col items-end select-none">
           <a 
             href="https://www.netlify.com/" 
             target="_blank" 
