@@ -20,6 +20,10 @@ export const NumberBeadsWidget: React.FC<NumberBeadsWidgetProps> = ({ isTranspar
   const [subTotal, setSubTotal] = useState(10);
   const [subTake, setSubTake] = useState(3);
 
+  // Clothespin feature
+  const [clothespinPos, setClothespinPos] = useState<number | null>(null);
+  const [isClothespinMode, setIsClothespinMode] = useState(false);
+
   // Constants
   const MAX_BEADS = 20;
 
@@ -78,9 +82,10 @@ export const NumberBeadsWidget: React.FC<NumberBeadsWidgetProps> = ({ isTranspar
   };
 
   const handleBeadClick = (index: number) => {
-      const val = index + 1;
-      if (activeTab === 'COUNT') {
-          setCountVal(val);
+      if (isClothespinMode) {
+          setClothespinPos(index);
+      } else if (activeTab === 'COUNT') {
+          setCountVal(index + 1);
       }
   };
 
@@ -137,7 +142,7 @@ export const NumberBeadsWidget: React.FC<NumberBeadsWidgetProps> = ({ isTranspar
       </div>
 
       {/* Beads Container */}
-      <div className="relative h-20 flex items-center justify-center w-full px-4">
+      <div className="relative h-24 flex items-center justify-center w-full px-4 mt-4">
           
           {/* The String */}
           <div className="absolute top-1/2 left-4 right-4 h-1 bg-slate-800 rounded-full -translate-y-1/2 z-0 shadow-sm"></div>
@@ -146,16 +151,27 @@ export const NumberBeadsWidget: React.FC<NumberBeadsWidgetProps> = ({ isTranspar
           <div className="relative z-10 flex justify-between w-full">
             {Array.from({ length: MAX_BEADS }).map((_, index) => {
                const { style, isSubtracted } = getBeadStyle(index);
+               const hasPin = clothespinPos === index;
                return (
                 <div 
                     key={index}
                     onClick={() => handleBeadClick(index)}
                     className={`
                         w-6 h-6 sm:w-7 sm:h-7 rounded-full transition-all duration-300 relative flex items-center justify-center
-                        ${activeTab === 'COUNT' ? 'cursor-pointer hover:scale-110 active:scale-95' : ''}
+                        cursor-pointer hover:scale-110 active:scale-95
                     `}
                     style={style}
                 >
+                    {/* Clothespin Icon */}
+                    {hasPin && (
+                        <div className="absolute -top-10 left-1/2 -translate-x-1/2 animate-bounce flex flex-col items-center">
+                            <div className="bg-amber-100 border-2 border-amber-600 w-3 h-8 rounded-sm shadow-md relative">
+                                <div className="absolute top-1/2 left-0 w-full h-0.5 bg-amber-600"></div>
+                            </div>
+                            <div className="text-[10px] font-black text-amber-700 bg-white px-1 rounded-md shadow-sm border border-amber-200 mt-1">?</div>
+                        </div>
+                    )}
+
                     {/* Subtraction Cross Overlay */}
                     {isSubtracted && (
                         <Icons.Close className="text-white drop-shadow-md w-5 h-5 opacity-80" strokeWidth={3} />
@@ -169,9 +185,31 @@ export const NumberBeadsWidget: React.FC<NumberBeadsWidgetProps> = ({ isTranspar
       {/* Controls Area */}
       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col gap-4">
           
+          <div className="flex justify-between items-center px-1">
+              <button 
+                onClick={() => {
+                    setIsClothespinMode(!isClothespinMode);
+                    if (!isClothespinMode && clothespinPos === null) setClothespinPos(0);
+                }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all shadow-sm ${isClothespinMode ? 'bg-amber-500 text-white ring-2 ring-amber-200 scale-105' : 'bg-white border text-slate-600 hover:bg-slate-50'}`}
+              >
+                  <Icons.Tools size={14} className={isClothespinMode ? 'animate-spin-slow' : ''} />
+                  {isClothespinMode ? 'Flytta klädnypa...' : 'Sätt på klädnypa'}
+              </button>
+
+              {clothespinPos !== null && (
+                  <button 
+                    onClick={() => { setClothespinPos(null); setIsClothespinMode(false); }}
+                    className="text-[10px] font-black text-red-400 hover:text-red-500 uppercase tracking-widest"
+                  >
+                      Ta bort klädnypa
+                  </button>
+              )}
+          </div>
+
           {/* COUNT CONTROLS */}
           {activeTab === 'COUNT' && (
-              <>
+              <div className={isClothespinMode ? 'opacity-30 pointer-events-none' : ''}>
                 <div className="flex justify-between text-xs font-bold text-slate-400 uppercase tracking-wider px-1">
                     <span>0</span>
                     <span>10</span>
@@ -183,12 +221,12 @@ export const NumberBeadsWidget: React.FC<NumberBeadsWidgetProps> = ({ isTranspar
                     onChange={(e) => setCountVal(Number(e.target.value))}
                     className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-700 hover:accent-blue-600 transition-colors"
                 />
-              </>
+              </div>
           )}
 
           {/* ADDITION CONTROLS */}
           {activeTab === 'ADD' && (
-              <div className="grid grid-cols-2 gap-8">
+              <div className={`grid grid-cols-2 gap-8 ${isClothespinMode ? 'opacity-30 pointer-events-none' : ''}`}>
                   <div className="flex flex-col gap-1">
                       <label className="text-xs font-bold text-blue-600 uppercase">Term 1 (Blå)</label>
                       <input 
@@ -217,7 +255,7 @@ export const NumberBeadsWidget: React.FC<NumberBeadsWidgetProps> = ({ isTranspar
 
           {/* SUBTRACTION CONTROLS */}
           {activeTab === 'SUB' && (
-               <div className="grid grid-cols-2 gap-8">
+               <div className={`grid grid-cols-2 gap-8 ${isClothespinMode ? 'opacity-30 pointer-events-none' : ''}`}>
                   <div className="flex flex-col gap-1">
                       <label className="text-xs font-bold text-blue-600 uppercase">Hela (Blå)</label>
                       <input 
@@ -245,7 +283,9 @@ export const NumberBeadsWidget: React.FC<NumberBeadsWidgetProps> = ({ isTranspar
           )}
           
           <div className="text-center text-[10px] text-slate-400">
-              {activeTab === 'COUNT' ? 'Dra i reglaget eller klicka på pärlorna.' : 'Justera reglagen för att bygga din uträkning med tydliga färger.'}
+              {isClothespinMode 
+                ? 'Klicka på en pärla för att sätta klädnypan där.' 
+                : activeTab === 'COUNT' ? 'Dra i reglaget eller klicka på pärlorna.' : 'Justera reglagen för att bygga din uträkning.'}
           </div>
       </div>
 

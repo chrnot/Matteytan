@@ -256,7 +256,7 @@ export const ShapesWidget: React.FC<ShapesWidgetProps> = ({ isTransparent, setTr
         {/* Workspace: Figure (Left) + Calculations (Right) */}
         <div className="flex-1 flex flex-col md:flex-row gap-3 min-h-0">
             {/* Figure Canvas */}
-            <div className="flex-[2] relative bg-slate-50 border border-slate-200 rounded-xl flex flex-col items-center justify-center overflow-hidden">
+            <div className={`transition-all duration-500 flex-col items-center justify-center overflow-hidden bg-slate-50 border border-slate-200 rounded-xl relative flex ${showAnswer ? 'flex-[2]' : 'flex-1'}`}>
                  <div className="absolute top-2 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-white/80 backdrop-blur border border-slate-100 rounded-full shadow-sm z-10 pointer-events-none">
                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{SHAPE_NAMES[shape]}</span>
                  </div>
@@ -328,25 +328,27 @@ export const ShapesWidget: React.FC<ShapesWidgetProps> = ({ isTransparent, setTr
             </div>
 
             {/* Calculations List (Right Side) */}
-            <div className="flex-1 min-w-[140px] bg-white border border-slate-200 rounded-xl p-3 overflow-y-auto space-y-3 shadow-inner">
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center border-b border-slate-100 pb-1">Uträkning</div>
-                {stats.map((s, i) => (
-                    <div key={i} className="animate-in slide-in-from-right-2 fade-in" style={{ animationDelay: `${i * 100}ms` }}>
-                        <div className="text-[10px] font-bold text-blue-600 uppercase mb-0.5">{s.label}</div>
-                        <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
-                            <div className="text-[10px] font-mono text-slate-400 italic mb-1">
-                                Formel: <span className="font-bold text-slate-600">{s.formula}</span>
-                            </div>
-                            <div className="text-xs font-mono font-bold text-slate-700">
-                                {s.calculation} =
-                            </div>
-                            <div className="text-xl font-black text-blue-800 leading-none mt-1">
-                                {s.value} <span className="text-[10px] font-normal text-blue-400">{s.unit}</span>
+            {showAnswer && (
+                <div className="flex-1 min-w-[140px] bg-white border border-slate-200 rounded-xl p-3 overflow-y-auto space-y-3 shadow-inner animate-in slide-in-from-right-4 duration-300">
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center border-b border-slate-100 pb-1">Uträkning</div>
+                    {stats.map((s, i) => (
+                        <div key={i} className="animate-in slide-in-from-right-2 fade-in" style={{ animationDelay: `${i * 100}ms` }}>
+                            <div className="text-[10px] font-bold text-blue-600 uppercase mb-0.5">{s.label}</div>
+                            <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                <div className="text-[10px] font-mono text-slate-400 italic mb-1">
+                                    Formel: <span className="font-bold text-slate-600">{s.formula}</span>
+                                </div>
+                                <div className="text-xs font-mono font-bold text-slate-700">
+                                    {s.calculation} =
+                                </div>
+                                <div className="text-xl font-black text-blue-800 leading-none mt-1">
+                                    {s.value} <span className="text-[10px] font-normal text-blue-400">{s.unit}</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
         </div>
 
         {/* Manual Input Controls */}
@@ -382,13 +384,20 @@ export const ShapesWidget: React.FC<ShapesWidgetProps> = ({ isTransparent, setTr
                     </div>
                 </div>
              )}
-             <div className="flex items-end pb-1 px-1">
+             <div className="flex items-end pb-1 gap-2 px-1">
                 <button 
                     onClick={() => setShowLabels(!showLabels)} 
-                    className={`p-2 rounded-lg transition-all ${showLabels ? 'bg-blue-600 text-white' : 'bg-white text-slate-400 border border-slate-200'}`}
-                    title="Visa/Dölj etiketter"
+                    className={`p-2 rounded-lg transition-all ${showLabels ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-slate-400 border border-slate-200 hover:text-slate-600'}`}
+                    title={showLabels ? "Dölj etiketter" : "Visa etiketter"}
                 >
                     <Icons.Book size={16} />
+                </button>
+                <button 
+                    onClick={() => setShowAnswer(!showAnswer)} 
+                    className={`p-2 rounded-lg transition-all ${showAnswer ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-400 border border-slate-200 hover:text-slate-600'}`}
+                    title={showAnswer ? "Dölj uträkning" : "Visa uträkning"}
+                >
+                    <Icons.Math size={16} />
                 </button>
              </div>
         </div>

@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Icons } from '../icons';
 
 type Side = 'VL' | 'HL';
@@ -22,6 +22,46 @@ interface EquationWidgetProps {
   setTransparent?: (v: boolean) => void;
 }
 
+const parseSide = (str: string): { x: number, c: number } | null => {
+    const clean = str.replace(/\s+/g, '').toLowerCase().replace(/−/g, '-');
+    if (!clean || clean === '0') return { x: 0, c: 0 };
+    
+    // Split into terms using regex to keep signs
+    const terms = clean.split(/(?=[+-])/);
+    let x = 0;
+    let c = 0;
+    
+    for (let term of terms) {
+        if (!term || term === '+') continue;
+        if (term.includes('x')) {
+            const coefStr = term.replace('x', '');
+            if (coefStr === '' || coefStr === '+') x += 1;
+            else if (coefStr === '-') x -= 1;
+            else {
+                const val = parseInt(coefStr);
+                if (isNaN(val)) return null;
+                x += val;
+            }
+        } else {
+            const val = parseInt(term);
+            if (isNaN(val)) return null;
+            c += val;
+        }
+    }
+    return { x, c };
+};
+
+const formatEquationSide = (x: number, c: number) => {
+    if (x === 0 && c === 0) return "0";
+    let parts = [];
+    if (x !== 0) parts.push(x === 1 ? "x" : x === -1 ? "-x" : `${x}x`);
+    if (c !== 0) {
+        const sign = c > 0 ? (parts.length > 0 ? " + " : "") : (parts.length > 0 ? " - " : "-");
+        parts.push(`${sign}${Math.abs(c)}`);
+    }
+    return parts.join("");
+};
+
 export const EquationWidget: React.FC<EquationWidgetProps> = ({ isTransparent, setTransparent }) => {
   const [mode, setMode] = useState<Representation>('MATCHSTICKS');
   const [hiddenX, setHiddenX] = useState(5);
@@ -29,6 +69,11 @@ export const EquationWidget: React.FC<EquationWidgetProps> = ({ isTransparent, s
   const [history, setHistory] = useState<HistoryStep[]>([]);
   const [bothSidesMode, setBothSidesMode] = useState(false);
   
+  // Local input states for manual editing
+  const [inputVL, setInputVL] = useState(formatEquationSide(1, 2));
+  const [inputHL, setInputHL] = useState(formatEquationSide(0, 7));
+  const isInternalChange = useRef(false);
+
   const vlMass = state.vlX * hiddenX + state.vlConst;
   const hlMass = state.hlX * hiddenX + state.hlConst;
   const isBalanced = vlMass === hlMass;
@@ -39,6 +84,30 @@ export const EquationWidget: React.FC<EquationWidgetProps> = ({ isTransparent, s
     const xIsolatedRight = state.hlX === 1 && state.vlX === 0 && state.hlConst === 0;
     return xIsolatedLeft || xIsolatedRight;
   }, [state, isBalanced]);
+
+  // Update text fields when state changes from buttons
+  useEffect(() => {
+    if (!isInternalChange.current) {
+        setInputVL(formatEquationSide(state.vlX, state.vlConst));
+        setInputHL(formatEquationSide(state.hlX, state.hlConst));
+    }
+    isInternalChange.current = false;
+  }, [state]);
+
+  const handleInputChange = (side: Side, val: string) => {
+    if (side === 'VL') setInputVL(val);
+    else setInputHL(val);
+
+    const parsed = parseSide(val);
+    if (parsed) {
+        isInternalChange.current = true;
+        setState(prev => ({
+            ...prev,
+            [side === 'VL' ? 'vlX' : 'hlX']: parsed.x,
+            [side === 'VL' ? 'vlConst' : 'hlConst']: parsed.c
+        }));
+    }
+  };
 
   const pushHistory = (action: string, newState: EquationState) => {
       setHistory(prev => [{ action, state: { ...state } }, ...prev].slice(0, 8));
@@ -110,7 +179,7 @@ export const EquationWidget: React.FC<EquationWidgetProps> = ({ isTransparent, s
                )}
           </div>
 
-          {/* Scale Visualization - Balken sänkt så att objekt syns ovanför */}
+          {/* Scale Visualization */}
           <div className="w-full max-w-[550px] relative mt-32 mb-10">
               <div 
                 className="w-full h-3 bg-gradient-to-b from-slate-400 to-slate-600 rounded-full relative transition-transform duration-1000 cubic-bezier(0.34, 1.56, 0.64, 1) flex shadow-lg z-30"
@@ -123,18 +192,29 @@ export const EquationWidget: React.FC<EquationWidgetProps> = ({ isTransparent, s
               <div className="absolute top-[190px] left-1/2 -translate-x-1/2 w-24 h-4 bg-slate-400 rounded-full shadow-md -z-10" />
           </div>
 
-          {/* Equation Display */}
-          <div className={`flex items-center gap-4 px-6 py-2 rounded-2xl shadow-lg border-2 font-mono text-2xl font-black transition-all duration-500 mb-2 ${isSolved ? 'bg-amber-50 border-amber-400 scale-105' : isBalanced ? 'bg-white border-emerald-400' : 'bg-white border-slate-200 opacity-90'}`}>
-              <div className={isBalanced ? 'text-blue-600' : 'text-slate-400'}>{formatEquationSide(state.vlX, state.vlConst)}</div>
-              <div className={`text-3xl ${isBalanced ? 'text-emerald-500' : 'text-rose-200'}`}>{isBalanced ? '=' : '≠'}</div>
-              <div className={isBalanced ? 'text-blue-600' : 'text-slate-400'}>{formatEquationSide(state.hlX, state.hlConst)}</div>
+          {/* Editable Equation Display */}
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-2xl shadow-lg border-2 transition-all duration-500 mb-2 ${isSolved ? 'bg-amber-50 border-amber-400 scale-105' : isBalanced ? 'bg-white border-emerald-400' : 'bg-white border-slate-200'}`}>
+              <input 
+                type="text"
+                value={inputVL}
+                onChange={(e) => handleInputChange('VL', e.target.value)}
+                className={`w-32 sm:w-40 text-center bg-transparent border-none outline-none font-mono text-2xl font-black ${isBalanced ? 'text-blue-600' : 'text-slate-500'}`}
+                placeholder="Vänster"
+              />
+              <div className={`text-3xl font-black ${isBalanced ? 'text-emerald-500' : 'text-rose-300'}`}>{isBalanced ? '=' : '≠'}</div>
+              <input 
+                type="text"
+                value={inputHL}
+                onChange={(e) => handleInputChange('HL', e.target.value)}
+                className={`w-32 sm:w-40 text-center bg-transparent border-none outline-none font-mono text-2xl font-black ${isBalanced ? 'text-blue-600' : 'text-slate-500'}`}
+                placeholder="Höger"
+              />
           </div>
       </div>
 
-      {/* RIGHT: COMPACT CONTROL SIDEBAR */}
+      {/* RIGHT: CONTROL SIDEBAR */}
       <div className="w-32 sm:w-40 shrink-0 bg-slate-100 border-l border-slate-200 flex flex-col h-full min-h-0 overflow-y-auto">
           
-          {/* Header Controls */}
           <div className="p-2 border-b border-slate-200 flex flex-col gap-1.5 bg-white">
               <div className="flex bg-slate-100 p-0.5 rounded-lg">
                   <button onClick={() => setMode('BLOCKS')} className={`flex-1 py-1 rounded-md text-[8px] font-black uppercase transition-all ${mode === 'BLOCKS' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}>Block</button>
@@ -147,20 +227,17 @@ export const EquationWidget: React.FC<EquationWidgetProps> = ({ isTransparent, s
               </div>
           </div>
 
-          {/* THE STEPS (BLACK SECTION) - Now vertical and ultra compact */}
           <div className="p-2 bg-slate-900 text-white flex flex-col gap-2 flex-1">
               <div className="flex justify-between items-center mb-0.5">
                   <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Matte-steg</span>
                   <button 
                     onClick={() => setBothSidesMode(!bothSidesMode)}
                     className={`p-1 rounded transition-all ${bothSidesMode ? 'bg-blue-600 text-white shadow-sm ring-1 ring-blue-400' : 'bg-slate-800 text-slate-500'}`}
-                    title="Symmetriskt läge"
                   >
                       <Icons.Zap size={10} />
                   </button>
               </div>
 
-              {/* VL Group */}
               <div className={`flex flex-col gap-0.5 ${bothSidesMode ? 'opacity-20 pointer-events-none' : ''}`}>
                   <span className="text-[7px] font-bold text-slate-500 uppercase px-1">Vänster</span>
                   <div className="grid grid-cols-2 gap-0.5">
@@ -171,7 +248,6 @@ export const EquationWidget: React.FC<EquationWidgetProps> = ({ isTransparent, s
                   </div>
               </div>
 
-              {/* Both Sides Group */}
               <div className="flex flex-col gap-0.5 py-1.5 border-y border-slate-800">
                   <span className="text-[7px] font-bold text-blue-400 uppercase text-center">Båda sidor</span>
                   <div className="grid grid-cols-2 gap-0.5">
@@ -182,7 +258,6 @@ export const EquationWidget: React.FC<EquationWidgetProps> = ({ isTransparent, s
                   </div>
               </div>
 
-              {/* HL Group */}
               <div className={`flex flex-col gap-0.5 ${bothSidesMode ? 'opacity-20 pointer-events-none' : ''}`}>
                   <span className="text-[7px] font-bold text-slate-500 uppercase px-1">Höger</span>
                   <div className="grid grid-cols-2 gap-0.5">
@@ -193,7 +268,6 @@ export const EquationWidget: React.FC<EquationWidgetProps> = ({ isTransparent, s
                   </div>
               </div>
 
-              {/* History & Tool Actions */}
               <div className="mt-auto flex flex-col gap-1.5 pt-2 border-t border-slate-800">
                   <div className="flex justify-between items-center">
                     <span className="text-[7px] font-black text-slate-600 uppercase">Historik</span>
@@ -242,37 +316,23 @@ const ActionBtn = ({ label, onClick, color }: { label: string, onClick: () => vo
     );
 };
 
-const formatEquationSide = (x: number, c: number) => {
-    if (x === 0 && c === 0) return "0";
-    let parts = [];
-    if (x !== 0) parts.push(x === 1 ? "x" : x === -1 ? "-x" : `${x}x`);
-    if (c !== 0) {
-        const sign = c > 0 ? (parts.length > 0 ? "+" : "") : "-";
-        parts.push(`${sign}${Math.abs(c)}`);
-    }
-    return parts.join(" ");
-};
-
 const ScalePan = ({ side, mass, otherMass, x, c, mode, onObjectClick }: { side: Side, mass: number, otherMass: number, x: number, c: number, mode: Representation, onObjectClick: (t: 'X' | 'CONST') => void }) => {
     const tilt = Math.max(-15, Math.min(15, (side === 'VL' ? mass - otherMass : otherMass - mass) * 1.5));
-    // Förkortad hänghöjd för att rymmas
-    const panH = 160;
     
     return (
         <div 
             className="absolute -top-[160px] w-[44%] h-[160px] flex flex-col justify-end items-center origin-top transition-transform duration-1000 cubic-bezier(0.34, 1.56, 0.64, 1) z-40"
             style={{ [side === 'VL' ? 'left' : 'right']: '12px', transform: `rotate(${-tilt}deg)` }}
         >
-            {/* Själva plattformen med objekten */}
             <div className="flex-1 flex flex-wrap justify-center content-end gap-1 p-2 w-full max-h-[140px] overflow-visible pb-1.5">
                 {Array.from({ length: Math.abs(x) }).map((_, i) => (
                     <div key={`x-${i}`} onClick={() => onObjectClick('X')} className="scale-item cursor-pointer transition-all duration-300">
                         {mode === 'BLOCKS' ? (
-                            <div className="w-8 h-8 bg-blue-500 border-b-2 border-r-2 border-blue-700 rounded-lg flex items-center justify-center text-white font-black text-sm">x</div>
+                            <div className="w-8 h-8 bg-blue-500 border-b-2 border-r-2 border-blue-700 rounded-lg flex items-center justify-center text-white font-black text-sm">{x > 0 ? 'x' : '-x'}</div>
                         ) : (
                             <div className="relative w-12 h-6 bg-[#8B5E3C] border border-[#5D3A1A] rounded shadow-sm overflow-hidden">
                                 <div className="absolute inset-0.5 bg-[#D2B48C] rounded-sm flex items-center justify-center">
-                                    <div className="px-1 py-0 bg-blue-600 text-white font-black text-[7px] rounded-sm">x</div>
+                                    <div className="px-1 py-0 bg-blue-600 text-white font-black text-[7px] rounded-sm">{x > 0 ? 'x' : '-x'}</div>
                                 </div>
                             </div>
                         )}
@@ -282,7 +342,7 @@ const ScalePan = ({ side, mass, otherMass, x, c, mode, onObjectClick }: { side: 
                     {Array.from({ length: Math.abs(c) }).map((_, i) => (
                         <div key={`c-${i}`} onClick={() => onObjectClick('CONST')} className="scale-item cursor-pointer transition-all duration-300">
                             {mode === 'BLOCKS' ? (
-                                <div className="w-5 h-5 bg-emerald-500 border-b-2 border-r-2 border-emerald-700 rounded-md shadow-md flex items-center justify-center text-white font-black text-[8px]">1</div>
+                                <div className="w-5 h-5 bg-emerald-500 border-b-2 border-r-2 border-emerald-700 rounded-md shadow-md flex items-center justify-center text-white font-black text-[8px]">{c > 0 ? '1' : '-1'}</div>
                             ) : (
                                 <div className="w-1.5 h-7 bg-[#F5DEB3] rounded-sm relative shadow-sm border-t-2 border-emerald-600" />
                             )}
@@ -290,7 +350,6 @@ const ScalePan = ({ side, mass, otherMass, x, c, mode, onObjectClick }: { side: 
                     ))}
                 </div>
             </div>
-            {/* Vågplattan */}
             <div className="w-full h-3 rounded-b-[40px] border-b-[6px] border-slate-400 bg-slate-200 shadow-md relative" />
         </div>
     );

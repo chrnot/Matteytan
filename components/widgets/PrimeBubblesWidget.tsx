@@ -22,12 +22,14 @@ const PRIME_CONFIG: Record<number, { color: string, pattern: string }> = {
   3: { color: '#22c55e', pattern: 'dots' },    // Grön
   5: { color: '#3b82f6', pattern: 'check' },   // Blå
   7: { color: '#a855f7', pattern: 'waves' },   // Lila
+  11: { color: '#ec4899', pattern: 'none' },   // Rosa
 };
 
-// Standardfärg för övriga primtal (11, 13, 17...)
+// Standardfärg för övriga primtal (13, 17, 19...)
 const DEFAULT_PRIME = { color: '#94a3b8', pattern: 'none' };
 
 const getPrimeFactors = (n: number): number[] => {
+  if (n <= 1) return [];
   const factors: number[] = [];
   let d = 2;
   let temp = n;
@@ -49,15 +51,19 @@ export const PrimeBubblesWidget: React.FC<PrimeBubblesWidgetProps> = ({ isTransp
   const [mode, setMode] = useState<Mode>('LAB');
   const [bubbles, setBubbles] = useState<BubbleItem[]>([]);
   const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [customInput, setCustomInput] = useState<string>('');
   
   const containerRef = useRef<HTMLDivElement>(null);
   const dragOffset = useRef({ x: 0, y: 0 });
 
-  const addBubble = (val: number) => {
+  const addBubble = (val: number, x?: number, y?: number) => {
+    if (val < 1 || val > 1000) return;
     const id = Math.random().toString(36).substr(2, 9);
     const container = containerRef.current;
-    const startX = container ? container.clientWidth / 2 : 100;
-    const startY = container ? container.clientHeight / 2 : 100;
+    
+    // Om inga koordinater skickas med, välj mitten av skärmen
+    const startX = x ?? (container ? container.clientWidth / 2 : 150);
+    const startY = y ?? (container ? container.clientHeight / 2 : 150);
 
     setBubbles(prev => [...prev, {
       id,
@@ -65,6 +71,20 @@ export const PrimeBubblesWidget: React.FC<PrimeBubblesWidgetProps> = ({ isTransp
       x: startX + (Math.random() * 40 - 20),
       y: startY + (Math.random() * 40 - 20)
     }]);
+  };
+
+  const handleCustomAdd = (e: React.FormEvent) => {
+      e.preventDefault();
+      const val = parseInt(customInput);
+      if (!isNaN(val)) {
+          addBubble(val);
+          setCustomInput('');
+      }
+  };
+
+  const selectFromGrid = (num: number) => {
+      addBubble(num);
+      setMode('LAB'); // Växla till labbet så användaren ser resultatet
   };
 
   const splitBubble = (id: string) => {
@@ -91,14 +111,16 @@ export const PrimeBubblesWidget: React.FC<PrimeBubblesWidgetProps> = ({ isTransp
     const target = bubbles.find(b => b.id === id);
     if (!target) return;
     setDraggedId(id);
-    dragOffset.current = { x: clientX - target.x, y: clientY - target.y };
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    dragOffset.current = { x: clientX - rect.left - target.x, y: clientY - rect.top - target.y };
   };
 
   const handleMove = (clientX: number, clientY: number) => {
     if (!draggedId || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const newX = Math.max(20, Math.min(rect.width - 20, clientX - dragOffset.current.x));
-    const newY = Math.max(20, Math.min(rect.height - 20, clientY - dragOffset.current.y));
+    const newX = Math.max(20, Math.min(rect.width - 20, clientX - rect.left - dragOffset.current.x));
+    const newY = Math.max(20, Math.min(rect.height - 20, clientY - rect.top - dragOffset.current.y));
     setBubbles(prev => prev.map(b => b.id === draggedId ? { ...b, x: newX, y: newY } : b));
   };
 
@@ -141,8 +163,8 @@ export const PrimeBubblesWidget: React.FC<PrimeBubblesWidgetProps> = ({ isTransp
         </defs>
       </svg>
 
-      <div className="shrink-0 flex items-center justify-between p-2 sm:p-3 bg-slate-50 border-b border-slate-200 z-10">
-          <div className="flex bg-slate-200 p-1 rounded-xl shadow-inner">
+      <div className="shrink-0 flex items-center justify-between p-2 sm:p-3 bg-slate-50 border-b border-slate-200 z-10 gap-4">
+          <div className="flex bg-slate-200 p-1 rounded-xl shadow-inner shrink-0">
               <button 
                 onClick={(e) => { e.stopPropagation(); setMode('LAB'); }} 
                 className={`px-3 sm:px-5 py-1.5 text-[10px] sm:text-xs font-black uppercase tracking-tight rounded-lg transition-all ${mode === 'LAB' ? 'bg-white shadow text-blue-600' : 'text-slate-600 hover:text-slate-900'}`}
@@ -158,14 +180,30 @@ export const PrimeBubblesWidget: React.FC<PrimeBubblesWidgetProps> = ({ isTransp
           </div>
           
           {mode === 'LAB' && (
-            <div className="flex items-center gap-1 sm:gap-2">
-                {[2, 3, 5, 7].map(v => (
-                    <button key={v} onClick={() => addBubble(v)} className="w-7 h-7 sm:w-9 sm:h-9 rounded-full border-2 border-white shadow-md transition-transform hover:scale-110 active:scale-95 flex items-center justify-center relative overflow-hidden" style={{ backgroundColor: PRIME_CONFIG[v].color }}>
-                        <rect width="100%" height="100%" fill={`url(#${PRIME_CONFIG[v].pattern})`} className="absolute inset-0 pointer-events-none" />
-                        <span className="text-white font-black text-[10px] sm:text-xs relative z-10">{v}</span>
+            <div className="flex items-center gap-1 sm:gap-2 flex-1 justify-end min-w-0">
+                <form onSubmit={handleCustomAdd} className="flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 ring-blue-100 transition-all mr-2">
+                    <input 
+                        type="number" 
+                        placeholder="Eget tal..." 
+                        className="w-16 sm:w-20 px-2 py-1.5 text-xs font-bold outline-none" 
+                        value={customInput}
+                        onChange={e => setCustomInput(e.target.value)}
+                        min="1" max="1000"
+                    />
+                    <button type="submit" className="bg-blue-600 text-white p-1.5 hover:bg-blue-700 transition-colors">
+                        <Icons.Plus size={14} strokeWidth={3} />
                     </button>
-                ))}
-                <div className="w-px h-6 bg-slate-300 mx-1 sm:mx-2"></div>
+                </form>
+
+                <div className="hidden sm:flex items-center gap-1">
+                    {[2, 3, 5, 7, 11].map(v => (
+                        <button key={v} onClick={() => addBubble(v)} className="w-7 h-7 sm:w-9 sm:h-9 rounded-full border-2 border-white shadow-md transition-transform hover:scale-110 active:scale-95 flex items-center justify-center relative overflow-hidden" style={{ backgroundColor: PRIME_CONFIG[v].color }}>
+                            {PRIME_CONFIG[v].pattern !== 'none' && <rect width="100%" height="100%" fill={`url(#${PRIME_CONFIG[v].pattern})`} className="absolute inset-0 pointer-events-none" />}
+                            <span className="text-white font-black text-[10px] sm:text-xs relative z-10">{v}</span>
+                        </button>
+                    ))}
+                </div>
+                <div className="w-px h-6 bg-slate-300 mx-1"></div>
                 <button onClick={() => setBubbles([])} className="p-2 text-slate-400 hover:text-red-500 transition-colors" title="Rensa allt"><Icons.Trash size={18} /></button>
             </div>
           )}
@@ -185,7 +223,10 @@ export const PrimeBubblesWidget: React.FC<PrimeBubblesWidgetProps> = ({ isTransp
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-300 pointer-events-none p-8 text-center animate-in fade-in duration-700">
                         <Icons.Zap size={48} className="mb-4 opacity-20" />
                         <h3 className="text-lg font-bold text-slate-400">Välkommen till Prim-Labbet!</h3>
-                        <p className="text-sm max-w-[240px] text-slate-400">Dra in primtal för att multiplicera. Dubbelklicka för att dela upp dem i faktorer.</p>
+                        <p className="text-sm max-w-[240px] text-slate-400 leading-relaxed">
+                            Dra in primtal eller skriv ett eget tal för att multiplicera. 
+                            <br/><strong>Dubbelklicka</strong> för att dela upp i faktorer.
+                        </p>
                     </div>
                 )}
                 {bubbles.map(b => (
@@ -199,28 +240,32 @@ export const PrimeBubblesWidget: React.FC<PrimeBubblesWidgetProps> = ({ isTransp
                 ))}
             </div>
         ) : (
-            <div className="w-full h-full overflow-y-auto p-2 sm:p-4 grid grid-cols-5 sm:grid-cols-10 gap-1.5 sm:gap-2 scrollbar-thin animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div className="w-full h-full overflow-y-auto p-4 sm:p-6 grid grid-cols-5 sm:grid-cols-10 gap-2 sm:gap-3 scrollbar-thin animate-in fade-in slide-in-from-bottom-2 duration-500">
                 {Array.from({ length: 100 }).map((_, i) => {
                     const num = i + 1;
                     return (
-                        <div key={num} className="aspect-square flex flex-col items-center justify-center bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-all group p-1 hover:border-blue-200">
+                        <button 
+                            key={num} 
+                            onClick={() => selectFromGrid(num)}
+                            className="aspect-square flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-lg hover:scale-105 active:scale-95 transition-all group p-1 hover:border-blue-300 hover:ring-4 hover:ring-blue-50"
+                        >
                             <div className="w-full flex-1 flex items-center justify-center overflow-hidden">
-                                <StaticBubble value={num} size={window.innerWidth < 640 ? 28 : 34} />
+                                <StaticBubble value={num} size={window.innerWidth < 640 ? 32 : 40} />
                             </div>
-                            <span className="text-[9px] sm:text-[10px] font-black text-slate-400 group-hover:text-blue-600 transition-colors mt-0.5">{num}</span>
-                        </div>
+                            <span className="text-[10px] sm:text-[11px] font-black text-slate-400 group-hover:text-blue-600 transition-colors mt-1">{num}</span>
+                        </button>
                     );
                 })}
             </div>
         )}
       </div>
 
-      <div className="p-2 sm:p-3 bg-white border-t border-slate-100 flex justify-between items-center shrink-0 z-10">
+      <div className="p-2 sm:p-3 bg-white border-t border-slate-100 flex justify-between items-center shrink-0 z-10 shadow-inner">
           <div className="flex gap-2 sm:gap-4 overflow-x-auto no-scrollbar py-1">
-              {[2, 3, 5, 7].map(v => (
+              {[2, 3, 5, 7, 11].map(v => (
                   <div key={v} className="flex items-center gap-1.5 shrink-0 px-2 py-0.5 rounded-full bg-slate-50 border border-slate-100">
                       <div className="w-3 h-3 rounded-full relative overflow-hidden" style={{backgroundColor: PRIME_CONFIG[v].color}}>
-                        <rect width="100%" height="100%" fill={`url(#${PRIME_CONFIG[v].pattern})`} />
+                        {PRIME_CONFIG[v].pattern !== 'none' && <rect width="100%" height="100%" fill={`url(#${PRIME_CONFIG[v].pattern})`} />}
                       </div>
                       <span className="text-[9px] sm:text-[10px] font-black text-slate-600">{v}</span>
                   </div>
@@ -245,7 +290,7 @@ const StaticBubble: React.FC<{ value: number, size: number }> = ({ value, size }
             {factors.length === 1 ? (
                 <g>
                     <circle cx={radius} cy={radius} r={radius - 1} fill={(PRIME_CONFIG[factors[0]] || DEFAULT_PRIME).color} stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-                    {PRIME_CONFIG[factors[0]] && <circle cx={radius} cy={radius} r={radius - 1} fill={`url(#${PRIME_CONFIG[factors[0]].pattern})`} pointerEvents="none" />}
+                    {PRIME_CONFIG[factors[0]] && PRIME_CONFIG[factors[0]].pattern !== 'none' && <circle cx={radius} cy={radius} r={radius - 1} fill={`url(#${PRIME_CONFIG[factors[0]].pattern})`} pointerEvents="none" />}
                 </g>
             ) : (
                 factors.map((f, i) => {
@@ -272,7 +317,7 @@ const StaticBubble: React.FC<{ value: number, size: number }> = ({ value, size }
 };
 
 const Bubble: React.FC<BubbleItem & { isDragging: boolean, onStart: (x: number, y: number) => void, onClick: () => void }> = (props) => {
-    const size = window.innerWidth < 640 ? 52 : 68;
+    const size = window.innerWidth < 640 ? 52 : 72;
     return (
         <div 
             className={`absolute cursor-grab active:cursor-grabbing transition-transform ${props.isDragging ? 'scale-110 z-[100]' : 'hover:scale-105 z-50 animate-in zoom-in duration-300'}`}
@@ -283,7 +328,7 @@ const Bubble: React.FC<BubbleItem & { isDragging: boolean, onStart: (x: number, 
         >
             <StaticBubble value={props.value} size={size} />
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <span className="text-white font-black text-sm sm:text-xl drop-shadow-md select-none">{props.value}</span>
+                <span className="text-white font-black text-sm sm:text-2xl drop-shadow-md select-none">{props.value}</span>
             </div>
             {getPrimeFactors(props.value).length > 1 && (
                 <button 
