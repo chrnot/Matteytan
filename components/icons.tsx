@@ -35,7 +35,8 @@ import {
   Coins,
   Hash,
   Crown,
-  Shuffle
+  Shuffle,
+  Clock
 } from 'lucide-react';
 
 export const Icons = {
@@ -48,11 +49,12 @@ export const Icons = {
   Math: Calculator,
   Ruler,
   Fraction: PieChart,
+  // Fix: Adding PieChart to Icons object as it is used in ClockLabWidget.tsx
+  PieChart,
   Graph: Activity,
   Dice: Dices,
   Calendar,
   Scale,
-  // Fix: Map the shorthand property 'Book' to the imported 'BookOpen' component
   Book: BookOpen,
   Trash: Trash2,
   Reset: RefreshCw,
@@ -75,5 +77,6 @@ export const Icons = {
   Coins,
   Hash,
   Crown,
-  Shuffle
+  Shuffle,
+  Clock
 };

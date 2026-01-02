@@ -24,6 +24,7 @@ import { FractionBarsWidget } from './components/widgets/FractionBarsWidget';
 import { MathWorkshopWidget } from './components/widgets/MathWorkshopWidget';
 import { PrimeBubblesWidget } from './components/widgets/PrimeBubblesWidget';
 import { ChanceGeneratorWidget } from './components/widgets/ChanceGeneratorWidget';
+import { ClockLabWidget } from './components/widgets/ClockLabWidget';
 import { Icons } from './components/icons';
 import { DrawingCanvas, DrawingCanvasHandle } from './components/DrawingCanvas';
 
@@ -192,7 +193,7 @@ const CodeOfConductModal: React.FC<{ isOpen: boolean; onClose: () => void }> = (
 const App: React.FC = () => {
   const [widgets, setWidgets] = useState<WidgetInstance[]>([]);
   const [background, setBackground] = useState<BackgroundType>('GRID');
-  const [topZ, setTopZ] = useState(40); 
+  const [topZ, setTopZ] = useState(150); 
   const [isToolsOpen, setIsToolsOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isCoCOpen, setIsCoCOpen] = useState(false);
@@ -234,6 +235,7 @@ const App: React.FC = () => {
           case WidgetType.MATH_WORKSHOP: return { w: clampW(850), h: clampH(600) };
           case WidgetType.PRIME_BUBBLES: return { w: clampW(850), h: clampH(650) };
           case WidgetType.CHANCE_GENERATOR: return { w: 280, h: 480 };
+          case WidgetType.CLOCK: return { w: clampW(700), h: clampH(550) };
           default: return { w: clampW(450), h: 400 };
       }
   };
@@ -317,6 +319,7 @@ const App: React.FC = () => {
       case WidgetType.MATH_WORKSHOP: return <MathWorkshopWidget {...props} />;
       case WidgetType.PRIME_BUBBLES: return <PrimeBubblesWidget {...props} />;
       case WidgetType.CHANCE_GENERATOR: return <ChanceGeneratorWidget {...props} />;
+      case WidgetType.CLOCK: return <ClockLabWidget />;
       default: return null;
     }
   };
@@ -343,13 +346,15 @@ const App: React.FC = () => {
       case WidgetType.MATH_WORKSHOP: return 'Matte-verkstad';
       case WidgetType.PRIME_BUBBLES: return 'Prim-Bubblor';
       case WidgetType.CHANCE_GENERATOR: return 'Slump-gen';
+      case WidgetType.CLOCK: return 'Klock-Labbet';
       default: return 'Verktyg';
     }
   };
 
   const EXTRA_TOOLS = [
     { type: WidgetType.MATH_WORKSHOP, icon: Icons.Tools, label: 'Verkstad' },
-    { type: WidgetType.CHANCE_GENERATOR, icon: Icons.Sparkles, label: 'Slump-gen' },
+    { type: WidgetType.CHANCE_GENERATOR, icon: Icons.Shuffle, label: 'Slump-gen' },
+    { type: WidgetType.CLOCK, icon: Icons.Clock, label: 'Klocka' },
     { type: WidgetType.SHAPES, icon: Icons.Shapes, label: 'Former' },
     { type: WidgetType.RULER, icon: Icons.Ruler, label: 'Linjal' },
     { type: WidgetType.PROTRACTOR, icon: Icons.Rotate, label: 'Gradskiva' },

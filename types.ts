@@ -20,6 +20,7 @@ export enum WidgetType {
   MATH_WORKSHOP = 'MATH_WORKSHOP',
   PRIME_BUBBLES = 'PRIME_BUBBLES',
   CHANCE_GENERATOR = 'CHANCE_GENERATOR',
+  CLOCK = 'CLOCK',
 }
 
 export interface WidgetInstance {
