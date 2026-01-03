@@ -21,6 +21,7 @@ export enum WidgetType {
   PRIME_BUBBLES = 'PRIME_BUBBLES',
   CHANCE_GENERATOR = 'CHANCE_GENERATOR',
   CLOCK = 'CLOCK',
+  ECONOMY = 'ECONOMY',
 }
 
 export interface WidgetInstance {

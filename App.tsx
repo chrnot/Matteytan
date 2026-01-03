@@ -25,6 +25,7 @@ import { MathWorkshopWidget } from './components/widgets/MathWorkshopWidget';
 import { PrimeBubblesWidget } from './components/widgets/PrimeBubblesWidget';
 import { ChanceGeneratorWidget } from './components/widgets/ChanceGeneratorWidget';
 import { ClockLabWidget } from './components/widgets/ClockLabWidget';
+import { EconomyWidget } from './components/widgets/EconomyWidget';
 import { Icons } from './components/icons';
 import { DrawingCanvas, DrawingCanvasHandle } from './components/DrawingCanvas';
 
@@ -236,6 +237,7 @@ const App: React.FC = () => {
           case WidgetType.PRIME_BUBBLES: return { w: clampW(850), h: clampH(650) };
           case WidgetType.CHANCE_GENERATOR: return { w: 280, h: 480 };
           case WidgetType.CLOCK: return { w: clampW(700), h: clampH(550) };
+          case WidgetType.ECONOMY: return { w: clampW(750), h: clampH(650) };
           default: return { w: clampW(450), h: 400 };
       }
   };
@@ -320,6 +322,7 @@ const App: React.FC = () => {
       case WidgetType.PRIME_BUBBLES: return <PrimeBubblesWidget {...props} />;
       case WidgetType.CHANCE_GENERATOR: return <ChanceGeneratorWidget {...props} />;
       case WidgetType.CLOCK: return <ClockLabWidget />;
+      case WidgetType.ECONOMY: return <EconomyWidget {...props} />;
       default: return null;
     }
   };
@@ -347,6 +350,7 @@ const App: React.FC = () => {
       case WidgetType.PRIME_BUBBLES: return 'Prim-Bubblor';
       case WidgetType.CHANCE_GENERATOR: return 'Slump-gen';
       case WidgetType.CLOCK: return 'Klock-Labbet';
+      case WidgetType.ECONOMY: return 'Ekonomi-Kollen';
       default: return 'Verktyg';
     }
   };
@@ -354,6 +358,7 @@ const App: React.FC = () => {
   const EXTRA_TOOLS = [
     { type: WidgetType.MATH_WORKSHOP, icon: Icons.Tools, label: 'Verkstad' },
     { type: WidgetType.CHANCE_GENERATOR, icon: Icons.Shuffle, label: 'Slump-gen' },
+    { type: WidgetType.ECONOMY, icon: Icons.Wallet, label: 'Ekonomi' },
     { type: WidgetType.CLOCK, icon: Icons.Clock, label: 'Klocka' },
     { type: WidgetType.SHAPES, icon: Icons.Shapes, label: 'Former' },
     { type: WidgetType.RULER, icon: Icons.Ruler, label: 'Linjal' },
@@ -470,7 +475,7 @@ const App: React.FC = () => {
       {/* GLOBAL FOOTER ELEMENTS */}
       
       {/* Bottom Left: Creative Commons */}
-      <div className="absolute bottom-4 left-6 z-[150] pointer-events-auto flex items-center gap-2 transition-opacity duration-300">
+      <div className="absolute bottom-4 left-6 z-[150] pointer-events-auto flex items-center gap-2 transition-opacity duration-300 text-shadow-sm">
           <svg className="w-4 h-4 text-slate-400 opacity-80" viewBox="0 0 496 512" fill="currentColor">
             <path d="M245.83 214.87l-33.22 17.28c-9.43-19.58-25.24-19.93-27.46-19.93-22.13 0-33.22 14.61-33.22 43.89 0 23.57 9.21 43.89 33.22 43.89 20 0 33.22-14.61 33.22-43.89h33.22c0 46.14-31.09 77.12-66.44 77.12-46.92 0-66.44-32.63-66.44-77.12 0-43.55 17.28-77.12 66.44-77.12 26.74 0 53.21 10.82 66.44 35.88zm143.84 0l-33.22 17.28c-9.43-19.58-25.24-19.93-27.46-19.93-22.13 0-33.22 14.61-33.22 43.89 0 23.57 9.21 43.89 33.22 43.89 20 0 33.22-14.61 33.22-43.89h33.22c0 46.14-31.09 77.12-66.44 77.12-46.92 0-66.44-32.63-66.44-77.12 0-43.55 17.28-77.12 66.44-77.12 26.74 0 53.21 10.82 66.44 35.88zM247.7 8C104.74 8 8 123.04 8 256c0 132.96 96.74 248 239.7 248 142.96 0 248.3-115.04 248.3-248C496 123.04 390.66 8 247.7 8zm.3 450.7c-112.03 0-203-90.97-203-203s90.97-203 203-203 203 90.97 203 203-90.97 203-203 203z"/>
           </svg>

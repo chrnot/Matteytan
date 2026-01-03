@@ -31,12 +31,9 @@ export const ClockLabWidget: React.FC = () => {
 
   // Svenskt talstöd
   const swedishTimeText = useMemo(() => {
-    // För talstöd avrundar vi ofta till närmaste 5 minuter för att det ska låta naturligt,
-    // men vi kan också vara exakta om vi vill.
     const roundedMins = Math.round(mins / 5) * 5;
     const isExact = mins === roundedMins;
     
-    // hTalk är den timme vi "syftar på" (t.ex. vid 17:25 syftar vi på 18/sex)
     const hTalk = (roundedMins >= 25 ? hours + 1 : hours) % 24;
     const hNames = ["tolv", "ett", "två", "tre", "fyra", "fem", "sex", "sju", "åtta", "nio", "tio", "elva", "tolv", "ett", "två", "tre", "fyra", "fem", "sex", "sju", "åtta", "nio", "tio", "elva"];
     const hName = hNames[hTalk];
@@ -57,11 +54,8 @@ export const ClockLabWidget: React.FC = () => {
     else if (roundedMins === 50) verbal = `tio i ${hName}`;
     else if (roundedMins === 55) verbal = `fem i ${hName}`;
     
-    // Om vi inte hittar ett bra verbalt uttryck (faller utanför avrundning), 
-    // eller om användaren föredrar siffror för exakta minuter:
     if (!verbal) return `${hours}:${mins < 10 ? '0' + mins : mins}`;
 
-    // Stor bokstav på första ordet
     const result = prefix + verbal;
     return result.charAt(0).toUpperCase() + result.slice(1);
   }, [hours, mins]);
@@ -145,7 +139,7 @@ export const ClockLabWidget: React.FC = () => {
 
       {/* 2. Main Workspace */}
       <div 
-        className="flex-1 flex flex-col md:flex-row items-center justify-around p-6 gap-8 overflow-hidden min-h-0"
+        className="flex-1 flex flex-col md:flex-row items-center justify-center p-4 sm:p-6 gap-4 sm:gap-8 overflow-hidden min-h-0"
         onMouseMove={handleDrag}
         onMouseUp={() => isDragging.current = null}
         onMouseLeave={() => isDragging.current = null}
@@ -153,13 +147,13 @@ export const ClockLabWidget: React.FC = () => {
         onTouchEnd={() => isDragging.current = null}
       >
         
-        {/* Analog Section */}
+        {/* Analog Section - Added max-w and max-h logic for better scaling */}
         {(viewMode === 'ANALOG' || viewMode === 'HYBRID') && (
-          <div className="relative flex-1 max-w-[400px] aspect-square animate-in zoom-in duration-500">
+          <div className="relative flex-1 flex items-center justify-center w-full h-full max-w-[min(100%,360px)] max-h-full aspect-square animate-in zoom-in duration-500">
             <svg 
               ref={svgRef}
               viewBox="0 0 300 300" 
-              className="w-full h-full drop-shadow-2xl"
+              className="w-full h-full drop-shadow-2xl overflow-visible"
             >
               <circle cx="150" cy="150" r="145" fill="white" stroke="#e2e8f0" strokeWidth="2" />
               <circle cx="150" cy="150" r="140" fill="#f8fafc" />
@@ -251,7 +245,7 @@ export const ClockLabWidget: React.FC = () => {
         {/* Digital Section */}
         {(viewMode === 'DIGITAL' || viewMode === 'HYBRID') && (
           <div className="flex-1 flex flex-col items-center justify-center animate-in slide-in-from-right-4 duration-500">
-             <div className="bg-slate-900 p-8 rounded-[2.5rem] shadow-2xl border-4 border-slate-800 flex items-center gap-4">
+             <div className="bg-slate-900 p-4 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl border-4 border-slate-800 flex items-center gap-2 sm:gap-4 scale-90 sm:scale-100">
                 <input 
                   type="number" 
                   value={displayHours}
@@ -259,9 +253,9 @@ export const ClockLabWidget: React.FC = () => {
                     const h = Math.max(0, Math.min(23, Number(e.target.value)));
                     setTotalMinutes(h * 60 + mins);
                   }}
-                  className="w-32 bg-transparent text-red-500 text-7xl font-black text-center outline-none border-b-4 border-transparent focus:border-red-900 font-mono transition-colors"
+                  className="w-20 sm:w-32 bg-transparent text-red-500 text-5xl sm:text-7xl font-black text-center outline-none border-b-4 border-transparent focus:border-red-900 font-mono transition-colors"
                 />
-                <span className="text-7xl font-black text-slate-700 animate-pulse">:</span>
+                <span className="text-5xl sm:text-7xl font-black text-slate-700 animate-pulse">:</span>
                 <input 
                   type="number" 
                   value={mins}
@@ -269,11 +263,11 @@ export const ClockLabWidget: React.FC = () => {
                     const m = Math.max(0, Math.min(59, Number(e.target.value)));
                     setTotalMinutes(hours * 60 + m);
                   }}
-                  className="w-32 bg-transparent text-blue-500 text-7xl font-black text-center outline-none border-b-4 border-transparent focus:border-blue-900 font-mono transition-colors"
+                  className="w-20 sm:w-32 bg-transparent text-blue-500 text-5xl sm:text-7xl font-black text-center outline-none border-b-4 border-transparent focus:border-blue-900 font-mono transition-colors"
                 />
              </div>
 
-             <div className="flex gap-12 mt-8">
+             <div className="flex gap-8 sm:gap-12 mt-4 sm:mt-8">
                 <div className="flex flex-col items-center gap-1">
                    <button onClick={() => setTotalMinutes(prev => (prev + 60) % 1440)} className="p-2 text-slate-300 hover:text-red-500 transition-colors"><Icons.Plus size={24}/></button>
                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Timmar</span>
@@ -290,19 +284,19 @@ export const ClockLabWidget: React.FC = () => {
       </div>
 
       {/* 3. Speech Translation Support (Footer) */}
-      <div className="p-6 bg-slate-50 border-t border-slate-200 shrink-0">
-          <div className="max-w-xl mx-auto flex items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-             <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0">
-                <Icons.Math size={24} />
+      <div className="p-4 sm:p-6 bg-slate-50 border-t border-slate-200 shrink-0">
+          <div className="max-w-xl mx-auto flex items-center gap-4 bg-white p-3 sm:p-4 rounded-2xl shadow-sm border border-slate-100">
+             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0">
+                <Icons.Math size={20} />
              </div>
-             <div className="flex-1">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">Svenskt talstöd</span>
-                <p className="text-xl font-bold text-slate-700 leading-tight">
+             <div className="flex-1 min-w-0">
+                <span className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">Svenskt talstöd</span>
+                <p className="text-base sm:text-xl font-bold text-slate-700 leading-tight truncate">
                   Klockan är <span className="text-blue-600 underline decoration-2 underline-offset-4">{swedishTimeText}</span>.
                 </p>
              </div>
              {startTime !== null && (
-               <div className="px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 font-bold text-xs">
+               <div className="px-2 sm:px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 font-bold text-[10px] sm:text-xs">
                   Δ {Math.abs(totalMinutes - startTime)} min
                </div>
              )}

@@ -36,7 +36,12 @@ import {
   Hash,
   Crown,
   Shuffle,
-  Clock
+  Clock,
+  Wallet,
+  Banknote,
+  PiggyBank,
+  ShoppingCart,
+  TrendingUp
 } from 'lucide-react';
 
 export const Icons = {
@@ -49,7 +54,6 @@ export const Icons = {
   Math: Calculator,
   Ruler,
   Fraction: PieChart,
-  // Fix: Adding PieChart to Icons object as it is used in ClockLabWidget.tsx
   PieChart,
   Graph: Activity,
   Dice: Dices,
@@ -78,5 +82,10 @@ export const Icons = {
   Hash,
   Crown,
   Shuffle,
-  Clock
+  Clock,
+  Wallet,
+  Banknote,
+  PiggyBank,
+  ShoppingCart,
+  TrendingUp
 };
