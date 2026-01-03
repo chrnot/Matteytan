@@ -17,6 +17,12 @@ interface Product {
     icon: React.ReactNode;
 }
 
+interface EconomyWidgetProps {
+  id?: string;
+  isTransparent?: boolean;
+  setTransparent?: (v: boolean) => void;
+}
+
 const PRODUCTS: Product[] = [
     { name: 'Äpple', price: 8, icon: <span className="text-4xl">🍎</span> },
     { name: 'Glass', price: 25, icon: <span className="text-4xl">🍦</span> },
@@ -88,7 +94,7 @@ const MoneyVisual: React.FC<{
   );
 };
 
-export const EconomyWidget: React.FC = () => {
+export const EconomyWidget: React.FC<EconomyWidgetProps> = () => {
   const [activeMode, setActiveMode] = useState<Mode>('CASHIER');
   const [viewType, setViewType] = useState<ViewType>('PHYSICAL');
   const [wallet, setWallet] = useState<MoneyItem[]>([]);

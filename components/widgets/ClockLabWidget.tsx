@@ -4,7 +4,13 @@ import { Icons } from '../icons';
 
 type ViewMode = 'ANALOG' | 'DIGITAL' | 'HYBRID';
 
-export const ClockLabWidget: React.FC = () => {
+interface ClockLabWidgetProps {
+  id?: string;
+  isTransparent?: boolean;
+  setTransparent?: (v: boolean) => void;
+}
+
+export const ClockLabWidget: React.FC<ClockLabWidgetProps> = () => {
   const [totalMinutes, setTotalMinutes] = useState(14 * 60 + 35); // Start kl 14:35
   const [viewMode, setViewMode] = useState<ViewMode>('HYBRID');
   const [is24h, setIs24h] = useState(false);
@@ -68,7 +74,7 @@ export const ClockLabWidget: React.FC = () => {
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
     
     const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
+    const centerY = viewMode === 'ANALOG' || viewMode === 'HYBRID' ? rect.top + rect.height / 2 : rect.bottom;
     
     const angle = Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI) + 90;
     const normalizedAngle = (angle + 360) % 360;
@@ -147,7 +153,7 @@ export const ClockLabWidget: React.FC = () => {
         onTouchEnd={() => isDragging.current = null}
       >
         
-        {/* Analog Section - Added max-w and max-h logic for better scaling */}
+        {/* Analog Section */}
         {(viewMode === 'ANALOG' || viewMode === 'HYBRID') && (
           <div className="relative flex-1 flex items-center justify-center w-full h-full max-w-[min(100%,360px)] max-h-full aspect-square animate-in zoom-in duration-500">
             <svg 
