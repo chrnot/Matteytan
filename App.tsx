@@ -392,6 +392,16 @@ const App: React.FC = () => {
 
       <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-[100] flex items-start gap-2">
          
+         {/* FEEDBACK LINK */}
+         <a 
+            href="https://docs.google.com/forms/d/e/1FAIpQLSegCGpTPfvN7R2A1WOWsDS5qZuM_JDKJiTvG1gRtCCF2l8Uvw/viewform?usp=sharing&ouid=116333036204575168879"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all font-bold text-xs sm:text-sm"
+         >
+             <Icons.Feedback size={16} /> <span className="hidden md:inline">GE FEEDBACK</span>
+         </a>
+
          <button 
             onClick={() => addWidget(WidgetType.NUMBER_OF_DAY)}
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all font-bold text-xs sm:text-sm"
