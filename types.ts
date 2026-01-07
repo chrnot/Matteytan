@@ -22,6 +22,7 @@ export enum WidgetType {
   CHANCE_GENERATOR = 'CHANCE_GENERATOR',
   CLOCK = 'CLOCK',
   ECONOMY = 'ECONOMY',
+  MULTI_MATCH = 'MULTI_MATCH',
 }
 
 export interface WidgetInstance {

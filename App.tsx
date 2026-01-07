@@ -26,6 +26,7 @@ import { PrimeBubblesWidget } from './components/widgets/PrimeBubblesWidget';
 import { ChanceGeneratorWidget } from './components/widgets/ChanceGeneratorWidget';
 import { ClockLabWidget } from './components/widgets/ClockLabWidget';
 import { EconomyWidget } from './components/widgets/EconomyWidget';
+import { MultiMatchWidget } from './components/widgets/MultiMatchWidget';
 import { Icons } from './components/icons';
 import { DrawingCanvas, DrawingCanvasHandle } from './components/DrawingCanvas';
 
@@ -238,6 +239,7 @@ const App: React.FC = () => {
           case WidgetType.CHANCE_GENERATOR: return { w: 280, h: 480 };
           case WidgetType.CLOCK: return { w: clampW(700), h: clampH(550) };
           case WidgetType.ECONOMY: return { w: clampW(750), h: clampH(650) };
+          case WidgetType.MULTI_MATCH: return { w: clampW(450), h: clampH(750) };
           default: return { w: clampW(450), h: 400 };
       }
   };
@@ -323,6 +325,7 @@ const App: React.FC = () => {
       case WidgetType.CHANCE_GENERATOR: return <ChanceGeneratorWidget {...props} />;
       case WidgetType.CLOCK: return <ClockLabWidget />;
       case WidgetType.ECONOMY: return <EconomyWidget {...props} />;
+      case WidgetType.MULTI_MATCH: return <MultiMatchWidget {...props} />;
       default: return null;
     }
   };
@@ -351,12 +354,14 @@ const App: React.FC = () => {
       case WidgetType.CHANCE_GENERATOR: return 'Slump-gen';
       case WidgetType.CLOCK: return 'Klock-Labbet';
       case WidgetType.ECONOMY: return 'Ekonomi-Kollen';
+      case WidgetType.MULTI_MATCH: return 'Multi-Matchen';
       default: return 'Verktyg';
     }
   };
 
   const EXTRA_TOOLS = [
     { type: WidgetType.MATH_WORKSHOP, icon: Icons.Tools, label: 'Verkstad' },
+    { type: WidgetType.MULTI_MATCH, icon: Icons.Zap, label: 'Multi-Match' },
     { type: WidgetType.CHANCE_GENERATOR, icon: Icons.Shuffle, label: 'Slump-gen' },
     { type: WidgetType.ECONOMY, icon: Icons.Wallet, label: 'Ekonomi' },
     { type: WidgetType.CLOCK, icon: Icons.Clock, label: 'Klocka' },

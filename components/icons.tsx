@@ -41,7 +41,10 @@ import {
   Banknote,
   PiggyBank,
   ShoppingCart,
-  TrendingUp
+  TrendingUp,
+  Flame,
+  Trophy,
+  Lightbulb
 } from 'lucide-react';
 
 export const Icons = {
@@ -87,5 +90,8 @@ export const Icons = {
   Banknote,
   PiggyBank,
   ShoppingCart,
-  TrendingUp
+  TrendingUp,
+  Flame,
+  Trophy,
+  Lightbulb
 };
