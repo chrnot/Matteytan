@@ -31,6 +31,7 @@ export const ShapesWidget: React.FC<ShapesWidgetProps> = ({ isTransparent, setTr
   const [showAnswer, setShowAnswer] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
   
   const svgRef = useRef<SVGSVGElement>(null);
   const dragOffset = useRef({ x: 0, y: 0 });
@@ -215,9 +216,39 @@ export const ShapesWidget: React.FC<ShapesWidgetProps> = ({ isTransparent, setTr
   const isLockedRatio = shape === 'SQUARE' || shape === 'CIRCLE' || shape === 'CUBE' || shape === 'SPHERE';
 
   return (
-    <div className="w-full h-full flex flex-col gap-3">
+    <div className="w-full h-full flex flex-col gap-3 relative">
+        {/* Info Button */}
+        <button 
+          onClick={() => setShowInfo(!showInfo)}
+          className={`absolute top-0 right-0 p-2 rounded-full transition-all z-[110] ${showInfo ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+        >
+          <Icons.Info size={20} />
+        </button>
+
+        {/* Info Modal */}
+        {showInfo && (
+          <div className="absolute top-12 right-0 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 p-5 z-[120] animate-in fade-in slide-in-from-top-2 duration-300 text-left">
+            <div className="flex justify-between items-start mb-3">
+               <h4 className="font-black text-slate-800 text-sm uppercase tracking-tighter">Om Former & Geometri</h4>
+               <button onClick={() => setShowInfo(false)} className="text-slate-300 hover:text-slate-500"><Icons.Close size={16}/></button>
+            </div>
+            <div className="space-y-4 text-xs leading-relaxed text-slate-600">
+              <p>Utforska geometriska figurer i 2D och kroppar i 3D. Se hur ändringar i mått direkt påverkar area, omkrets och volym.</p>
+              <section className="space-y-2">
+                <h5 className="font-black text-blue-600 uppercase text-[10px]">Användning:</h5>
+                <ul className="space-y-1.5 list-disc pl-4">
+                  <li><strong>Läge:</strong> Växla mellan 2D (ytor) och 3D (volymer) i menyn högst upp.</li>
+                  <li><strong>Ändra form:</strong> Dra i den orangea pricken direkt på figuren för att ändra dess storlek interaktivt.</li>
+                  <li><strong>Beräkningar:</strong> Se formler och steg-för-steg-uträkningar i panelen till höger.</li>
+                  <li><strong>Precision:</strong> Du kan även skriva in exakta mått i rutorna längst ner.</li>
+                </ul>
+              </section>
+            </div>
+          </div>
+        )}
+
         {/* Mode Selector */}
-        <div className="flex bg-slate-200 p-1 rounded-xl shrink-0">
+        <div className="flex bg-slate-200 p-1 rounded-xl shrink-0 pr-10">
             <button 
                 onClick={() => { setMode('2D'); selectShape('RECT'); }}
                 className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${mode === '2D' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
@@ -292,13 +323,7 @@ export const ShapesWidget: React.FC<ShapesWidgetProps> = ({ isTransparent, setTr
                         )}
                         {shape === 'SPHERE' && (
                             <g transform={`translate(${CX}, ${CY})`}>
-                                <defs>
-                                    <radialGradient id="sphereGrad" cx="30%" cy="30%" r="70%">
-                                        <stop offset="0%" stopColor="#d8b4fe" />
-                                        <stop offset="100%" stopColor="#7e22ce" />
-                                    </radialGradient>
-                                </defs>
-                                <circle r={pxW} fill="url(#sphereGrad)" stroke="#6b21a8" strokeWidth="2" />
+                                <circle r={pxW} fill="#7e22ce" stroke="#6b21a8" strokeWidth="2" opacity="0.8" />
                                 <ellipse cx="0" cy="0" rx={pxW} ry={pxW/3} fill="none" stroke="white" strokeWidth="1" strokeDasharray="4 2" opacity="0.5" />
                                 {showLabels && <text x={pxW/2} y="-12" textAnchor="middle" className="text-[14px] font-black fill-white drop-shadow-sm">r = {clean(width)}</text>}
                             </g>

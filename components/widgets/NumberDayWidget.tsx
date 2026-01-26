@@ -14,6 +14,7 @@ export const NumberDayWidget: React.FC<NumberDayWidgetProps> = ({ isTransparent,
   // Initialize with a random number based on the default range (100)
   const [number, setNumber] = useState<number>(() => Math.floor(Math.random() * 100) + 1);
   const [visible, setVisible] = useState<Record<string, boolean>>({});
+  const [showInfo, setShowInfo] = useState(false);
 
   // Clamp number when range changes
   useEffect(() => {
@@ -93,10 +94,38 @@ export const NumberDayWidget: React.FC<NumberDayWidgetProps> = ({ isTransparent,
   };
 
   return (
-    <div className="w-[450px] flex flex-col gap-4">
-        
+    <div className="w-[450px] flex flex-col gap-4 relative">
+        {/* Info Button */}
+        <button 
+          onClick={() => setShowInfo(!showInfo)}
+          className={`absolute top-0 right-0 p-2 rounded-full transition-all z-[110] ${showInfo ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+        >
+          <Icons.Info size={20} />
+        </button>
+
+        {/* Info Modal */}
+        {showInfo && (
+          <div className="absolute top-12 right-0 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 p-5 z-[120] animate-in fade-in slide-in-from-top-2 duration-300 text-left">
+            <div className="flex justify-between items-start mb-3">
+               <h4 className="font-black text-slate-800 text-sm uppercase tracking-tighter">Om Dagens Tal</h4>
+               <button onClick={() => setShowInfo(false)} className="text-slate-300 hover:text-slate-500"><Icons.Close size={16}/></button>
+            </div>
+            <div className="space-y-4 text-xs leading-relaxed text-slate-600">
+              <p>Här kan du utforska ett tals egenskaper på djupet. En perfekt övning för morgonmötet eller lektionsstarten.</p>
+              <section className="space-y-2">
+                <h5 className="font-black text-blue-600 uppercase text-[10px]">Användning:</h5>
+                <ul className="space-y-1.5 list-disc pl-4">
+                  <li><strong>Talområde:</strong> Välj mellan 0-20, 0-100 eller 0-1000 för att anpassa svårighetsgraden.</li>
+                  <li><strong>Egenskaper:</strong> Klicka på de grå rutorna för att avslöja fakta om talet (t.ex. tiokompisar, hälften eller talsorter).</li>
+                  <li><strong>Slumpa:</strong> Klicka på "SLUMPA NYTT" för att få ett nytt tal att analysera.</li>
+                </ul>
+              </section>
+            </div>
+          </div>
+        )}
+
         {/* Difficulty Selector */}
-        <div className="flex bg-slate-100 p-1 rounded-xl mx-auto shrink-0">
+        <div className="flex bg-slate-100 p-1 rounded-xl mx-auto shrink-0 pr-10">
             <button 
                 onClick={() => setRange(20)} 
                 className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${range === 20 ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}

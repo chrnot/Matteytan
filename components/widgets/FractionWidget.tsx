@@ -122,6 +122,7 @@ export const FractionWidget: React.FC<FractionWidgetProps> = ({ isTransparent, s
   ]);
   const [shape, setShape] = useState<ShapeType>('CIRCLE');
   const [displayMode, setDisplayMode] = useState<DisplayMode>('FRACTION');
+  const [showInfo, setShowInfo] = useState(false);
 
   const updateItem = (index: number, newState: FractionState) => {
       setItems(prev => prev.map((item, i) => i === index ? newState : item));
@@ -142,9 +143,39 @@ export const FractionWidget: React.FC<FractionWidgetProps> = ({ isTransparent, s
   const colors = ["#3b82f6", "#10b981", "#a855f7"];
 
   return (
-    <div className="w-full flex flex-col gap-6">
+    <div className="w-full h-full flex flex-col gap-6 relative">
+      {/* Info Button */}
+      <button 
+        onClick={() => setShowInfo(!showInfo)}
+        className={`absolute top-0 right-0 p-2 rounded-full transition-all z-[110] ${showInfo ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+      >
+        <Icons.Info size={20} />
+      </button>
+
+      {/* Info Modal */}
+      {showInfo && (
+        <div className="absolute top-12 right-0 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 p-5 z-[120] animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex justify-between items-start mb-3">
+             <h4 className="font-black text-slate-800 text-sm uppercase tracking-tighter">Om Bråk & Delar</h4>
+             <button onClick={() => setShowInfo(false)} className="text-slate-300 hover:text-slate-500"><Icons.Close size={16}/></button>
+          </div>
+          <div className="space-y-4 text-xs leading-relaxed text-slate-600">
+            <p>Verktyget hjälper dig att förstå hur tal kan delas upp och hur olika bråk förhåller sig till varandra.</p>
+            <section className="space-y-2">
+              <h5 className="font-black text-blue-600 uppercase text-[10px]">Användning:</h5>
+              <ul className="space-y-1.5 list-disc pl-4">
+                <li><strong>Jämför:</strong> Välj 2 eller 3 figurer för att se likheter och skillnader mellan olika nämnare.</li>
+                <li><strong>Visning:</strong> Växla mellan bråkform, procent och decimaltal för att se sambanden.</li>
+                <li><strong>Former:</strong> Byt mellan cirklar och rektanglar för att visualisera delarna på olika sätt.</li>
+                <li><strong>Ändra:</strong> Använd knapparna eller klicka direkt i figurerna för att ändra täljare och nämnare.</li>
+              </ul>
+            </section>
+          </div>
+        </div>
+      )}
+
       {/* Configuration Toolbar */}
-      <div className="flex flex-col sm:flex-row justify-between gap-4 p-3 bg-slate-50 border border-slate-200 rounded-2xl shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between gap-4 p-3 bg-slate-50 border border-slate-200 rounded-2xl shadow-sm pr-10">
         <div className="flex bg-slate-200 p-0.5 rounded-xl">
             {[1, 2, 3].map(n => (
                 <button key={n} onClick={() => setItemCount(n)} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${items.length === n ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
@@ -166,7 +197,7 @@ export const FractionWidget: React.FC<FractionWidgetProps> = ({ isTransparent, s
       </div>
 
       {/* Main Display Area */}
-      <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 lg:gap-8">
+      <div className="flex-1 flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 lg:gap-8 overflow-y-auto min-h-0 pb-4">
           {items.map((item, idx) => (
               <React.Fragment key={idx}>
                   <div className="flex-1 w-full max-w-[200px]">
@@ -190,7 +221,7 @@ export const FractionWidget: React.FC<FractionWidgetProps> = ({ isTransparent, s
           ))}
       </div>
 
-      <div className="text-[10px] text-slate-400 text-center font-bold uppercase tracking-widest mt-2">
+      <div className="text-[10px] text-slate-400 text-center font-bold uppercase tracking-widest mt-auto mb-2">
           Laborera med täljare och nämnare för att jämföra värden
       </div>
     </div>

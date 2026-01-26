@@ -150,7 +150,7 @@ const CodeOfConductModal: React.FC<{ isOpen: boolean; onClose: () => void }> = (
                   <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 font-black">3</div>
                   <div>
                     <h4 className="font-bold text-slate-800">Vi tar ansvar och rättar till misstag</h4>
-                    <p className="text-sm">Ingen förväntas veta allt. Om någon påpekar att ditt beteende har varit sårande: lyssna utan att gå i försvarsställning, ta till dig kritiken och försök lösa situationen konstruktivt.</p>
+                    <p className="text-sm">Ingen förväntas veta allt. Om någon påpekar att ditt beteende har varit sårande: lyssna utan att gå i försvarsställning, ta till dig kritiken och försöök lösa situationen konstruktivt.</p>
                   </div>
                 </div>
               </div>
@@ -219,12 +219,12 @@ const App: React.FC = () => {
 
       switch(type) {
           case WidgetType.NUMBER_LINE: return { w: clampW(800), h: clampH(380) };
-          case WidgetType.COORDINATES: return { w: clampW(isMobile ? 380 : 700), h: clampH(isMobile ? 500 : 450) };
+          case WidgetType.COORDINATES: return { w: clampW(isMobile ? 380 : 700), h: clampH(isMobile ? 550 : 500) };
           case WidgetType.PROBABILITY: return { w: clampW(600), h: clampH(650) };
           case WidgetType.BASE_10: return { w: clampW(850), h: clampH(550) };
-          case WidgetType.PERCENTAGE: return { w: clampW(700), h: clampH(420) };
+          case WidgetType.PERCENTAGE: return { w: clampW(700), h: clampH(520) };
           case WidgetType.NUMBER_BEADS: return { w: clampW(850), h: clampH(720) };
-          case WidgetType.FRACTION: return { w: clampW(550), h: clampH(350) };
+          case WidgetType.FRACTION: return { w: clampW(550), h: clampH(450) };
           case WidgetType.RULER: return { w: clampW(500), h: 200 };
           case WidgetType.PROTRACTOR: return { w: clampW(450), h: 300 };
           case WidgetType.EQUATION: return { w: clampW(600), h: clampH(650) };

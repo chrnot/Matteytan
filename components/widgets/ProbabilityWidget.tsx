@@ -252,8 +252,14 @@ const SumsView = () => {
              <div className="flex-1 flex flex-col overflow-hidden">
                  <div className="h-20 flex items-center justify-between px-4 mb-4 shrink-0 bg-white border-2 border-slate-100 rounded-2xl shadow-sm">
                      <div className="flex gap-2 items-center overflow-hidden">
-                        {lastRoll.map((r, i) => (<DiceFace key={i} val={r} />))}
-                        {lastRoll.length > 0 && (<div className="flex items-center ml-3 text-xl sm:text-2xl font-black text-blue-600 animate-in zoom-in whitespace-nowrap">= {lastRoll.reduce((a,b)=>a+b,0)}</div>)}
+                        {lastRoll.map((r, i) => (
+                            <DiceFace key={i} val={r} />
+                        ))}
+                        {lastRoll.length > 0 && (
+                            <div className="flex items-center ml-3 text-xl sm:text-2xl font-black text-blue-600 animate-in zoom-in whitespace-nowrap">
+                                = {lastRoll.reduce((a,b)=>a+b,0)}
+                            </div>
+                        )}
                      </div>
                      <div className="flex gap-1.5 sm:gap-2 shrink-0">
                         <button onClick={() => roll(1)} className="px-4 sm:px-6 py-2.5 bg-slate-900 text-white rounded-xl shadow-lg hover:bg-slate-800 font-black text-xs sm:text-sm active:scale-95 transition-all">KASTA</button>
@@ -388,10 +394,40 @@ const MysteryView = () => {
 
 export const ProbabilityWidget: React.FC<ProbabilityWidgetProps> = ({ isTransparent, setTransparent }) => {
   const [activeTab, setActiveTab] = useState<Tab>('URN');
+  const [showInfo, setShowInfo] = useState(false);
 
   return (
-    <div className="w-full h-full flex flex-col">
-      <div className="flex bg-slate-100 p-1 rounded-2xl mb-6 shrink-0 border border-slate-200">
+    <div className="w-full h-full flex flex-col relative">
+      {/* Info Button */}
+      <button 
+        onClick={() => setShowInfo(!showInfo)}
+        className={`absolute top-0 right-0 p-2 rounded-full transition-all z-[110] ${showInfo ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+      >
+        <Icons.Info size={20} />
+      </button>
+
+      {/* Info Modal */}
+      {showInfo && (
+        <div className="absolute top-12 right-0 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 p-5 z-[120] animate-in fade-in slide-in-from-top-2 duration-300 text-left">
+          <div className="flex justify-between items-start mb-3">
+             <h4 className="font-black text-slate-800 text-sm uppercase tracking-tighter">Om Sannolikhet</h4>
+             <button onClick={() => setShowInfo(false)} className="text-slate-300 hover:text-slate-500"><Icons.Close size={16}/></button>
+          </div>
+          <div className="space-y-4 text-xs leading-relaxed text-slate-600">
+            <p>Sannolikhet handlar om hur stor chans det är att något händer.</p>
+            <section className="space-y-2">
+              <h5 className="font-black text-blue-600 uppercase text-[10px]">De tre lägena:</h5>
+              <ul className="space-y-1.5 list-disc pl-4">
+                <li><strong>Urnan:</strong> Experimentera med att dra objekt. Hur ändras chansen om du inte lägger tillbaka föremålet?</li>
+                <li><strong>Summa:</strong> Slå tärning tusentals gånger. Se hur resultatet alltid skapar en "kulle" (normalkurva) kring mitten.</li>
+                <li><strong>Detektiven:</strong> Träna kritiskt tänkande. Kan du genom data avgöra om någon fuskar?</li>
+              </ul>
+            </section>
+          </div>
+        </div>
+      )}
+
+      <div className="flex bg-slate-100 p-1 rounded-2xl mb-6 shrink-0 border border-slate-200 pr-10">
           <button onClick={() => setActiveTab('URN')} className={`flex-1 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${activeTab === 'URN' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>Urnan</button>
           <button onClick={() => setActiveTab('SUMS')} className={`flex-1 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${activeTab === 'SUMS' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>Summa</button>
           <button onClick={() => setActiveTab('MYSTERY')} className={`flex-1 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${activeTab === 'MYSTERY' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>Detektiven</button>

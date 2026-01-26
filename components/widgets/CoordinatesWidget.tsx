@@ -31,6 +31,7 @@ export const CoordinatesWidget: React.FC<CoordinatesWidgetProps> = ({ isTranspar
     LINE_CONFIGS.map(cfg => ({ ...cfg, points: [] }))
   );
   const [activeLineId, setActiveLineId] = useState<string>('A');
+  const [showInfo, setShowInfo] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
 
   const GRID_SIZE = 20; 
@@ -101,7 +102,37 @@ export const CoordinatesWidget: React.FC<CoordinatesWidgetProps> = ({ isTranspar
   };
 
   return (
-    <div className="w-full h-full flex flex-col md:flex-row gap-4 overflow-hidden bg-white">
+    <div className="w-full h-full flex flex-col md:flex-row gap-4 overflow-hidden bg-white relative">
+      {/* Info Button */}
+      <button 
+        onClick={() => setShowInfo(!showInfo)}
+        className={`absolute top-0 right-0 p-2 rounded-full transition-all z-[110] ${showInfo ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+      >
+        <Icons.Info size={20} />
+      </button>
+
+      {/* Info Modal */}
+      {showInfo && (
+        <div className="absolute top-12 right-0 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 p-5 z-[120] animate-in fade-in slide-in-from-top-2 duration-300 text-left">
+          <div className="flex justify-between items-start mb-3">
+             <h4 className="font-black text-slate-800 text-sm uppercase tracking-tighter">Om Koordinatsystemet</h4>
+             <button onClick={() => setShowInfo(false)} className="text-slate-300 hover:text-slate-500"><Icons.Close size={16}/></button>
+          </div>
+          <div className="space-y-4 text-xs leading-relaxed text-slate-600">
+            <p>Här kan du plotta punkter och se hur linjer skapas genom koordinater (x, y).</p>
+            <section className="space-y-2">
+              <h5 className="font-black text-blue-600 uppercase text-[10px]">Användning:</h5>
+              <ul className="space-y-1.5 list-disc pl-4">
+                <li><strong>Rita:</strong> Klicka i rutnätet för att sätta ut en punkt. Klicka på samma punkt igen för att ta bort den.</li>
+                <li><strong>Linjer:</strong> Om du sätter ut två eller fler punkter för en linje (A, B eller C) ritas linjen ut och dess ekvation (y=kx+m) visas.</li>
+                <li><strong>Tabell:</strong> Se alla punkters exakta värden i tabellen till höger.</li>
+                <li><strong>Begrepp:</strong> x-axeln är den vågräta, y-axeln är den lodräta. Mitten kallas origo (0, 0).</li>
+              </ul>
+            </section>
+          </div>
+        </div>
+      )}
+
       {/* Diagram Area */}
       <div className="flex-1 min-h-0 flex items-center justify-center p-2 relative">
           <svg 

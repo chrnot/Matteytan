@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Icons } from '../icons';
 
@@ -71,6 +72,7 @@ const PercentagePanel: React.FC<{
 export const PercentageWidget: React.FC<PercentageWidgetProps> = ({ isTransparent, setTransparent }) => {
   const [valA, setValA] = useState(25);
   const [valB, setValB] = useState(50);
+  const [showInfo, setShowInfo] = useState(false);
 
   const getOperator = () => {
       if (valA > valB) return '>';
@@ -79,8 +81,38 @@ export const PercentageWidget: React.FC<PercentageWidgetProps> = ({ isTransparen
   };
 
   return (
-    <div className="w-full max-w-[650px] min-w-[300px]">
-      <div className="flex flex-col sm:flex-row justify-center items-center sm:items-start gap-4 sm:gap-8">
+    <div className="w-full h-full flex flex-col gap-4 relative overflow-y-auto">
+      {/* Info Button */}
+      <button 
+        onClick={() => setShowInfo(!showInfo)}
+        className={`absolute top-0 right-0 p-2 rounded-full transition-all z-[110] ${showInfo ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+      >
+        <Icons.Info size={20} />
+      </button>
+
+      {/* Info Modal */}
+      {showInfo && (
+        <div className="absolute top-12 right-0 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 p-5 z-[120] animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex justify-between items-start mb-3">
+             <h4 className="font-black text-slate-800 text-sm uppercase tracking-tighter">Om Procent-Labbet</h4>
+             <button onClick={() => setShowInfo(false)} className="text-slate-300 hover:text-slate-500"><Icons.Close size={16}/></button>
+          </div>
+          <div className="space-y-4 text-xs leading-relaxed text-slate-600">
+            <p>Här kan du visualisera vad "procent" (av hundra) faktiskt betyder genom att färglägga rutor i en hundraruta.</p>
+            <section className="space-y-2">
+              <h5 className="font-black text-blue-600 uppercase text-[10px]">Användning:</h5>
+              <ul className="space-y-1.5 list-disc pl-4">
+                <li><strong>Hundra-rutan:</strong> Varje ruta representerar 1 procentenhet (1/100).</li>
+                <li><strong>Samband:</strong> Se hur procenttalet hänger ihop med decimaltal och bråkform.</li>
+                <li><strong>Förenkling:</strong> Verktyget räknar automatiskt ut det förenklade bråket (t.ex. att 25% = 1/4).</li>
+                <li><strong>Jämför:</strong> Ändra de två värdena för att se vilket som är störst.</li>
+              </ul>
+            </section>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col sm:flex-row justify-center items-center sm:items-start gap-4 sm:gap-8 pt-4">
         
         {/* Panel A */}
         <PercentagePanel 
@@ -115,7 +147,7 @@ export const PercentageWidget: React.FC<PercentageWidgetProps> = ({ isTransparen
       </div>
       
       {!isTransparent && (
-        <div className="mt-6 pt-4 border-t border-slate-100 flex justify-center text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center px-4 sm:px-8">
+        <div className="mt-auto pt-4 border-t border-slate-100 flex justify-center text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center px-4 sm:px-8 pb-4">
             Tips: Klicka direkt i rutorna för att snabbt välja ett värde.
         </div>
       )}
