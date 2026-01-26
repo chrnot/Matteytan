@@ -45,7 +45,8 @@ import {
   Flame,
   Trophy,
   Lightbulb,
-  MessageSquare
+  MessageSquare,
+  Info
 } from 'lucide-react';
 
 export const Icons = {
@@ -95,5 +96,6 @@ export const Icons = {
   Flame,
   Trophy,
   Lightbulb,
-  Feedback: MessageSquare
+  Feedback: MessageSquare,
+  Info
 };

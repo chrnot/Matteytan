@@ -64,7 +64,7 @@ const MoneyVisual: React.FC<{
         onClick={onClick}
         onDoubleClick={onDoubleClick}
         className={`${height} ${width} ${config.color} rounded-md border-2 border-black/10 shadow-lg flex items-center justify-between px-2 cursor-grab active:cursor-grabbing hover:scale-105 transition-transform active:scale-95 group relative overflow-hidden select-none animate-in zoom-in duration-300`}
-        title={`Dra för att betala. Dubbelklicka för att växla ${item.value} kr`}
+        title={`Dra för att flytta. Dubbelklicka för att växla ${item.value} kr`}
       >
         <span className="text-[10px] font-black text-white/40">{item.value}</span>
         <div className="flex flex-col items-center">
@@ -134,6 +134,14 @@ export const EconomyWidget: React.FC<EconomyWidgetProps> = () => {
     setWallet(prev => [...prev, item]);
   };
 
+  const moveMoneyToBucket = (id: string, bucket: 'fun' | 'savings' | 'needs') => {
+    const item = wallet.find(i => i.id === id);
+    if (!item) return;
+    setWallet(prev => prev.filter(i => i.id !== id));
+    setBudgetItems(prev => ({ ...prev, [bucket]: prev[bucket] + item.value }));
+    setTransactions(prev => [{label: `Budget: ${bucket}`, amount: -item.value, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}, ...prev].slice(0, 10));
+  };
+
   const handleDragStart = (e: React.DragEvent, id: string, source: 'WALLET' | 'REGISTER') => {
     e.dataTransfer.setData('id', id);
     e.dataTransfer.setData('source', source);
@@ -153,6 +161,13 @@ export const EconomyWidget: React.FC<EconomyWidgetProps> = () => {
     const id = e.dataTransfer.getData('id');
     const source = e.dataTransfer.getData('source');
     if (source === 'REGISTER') moveMoneyToWallet(id);
+  };
+
+  const handleDropToBucket = (e: React.DragEvent, bucket: 'fun' | 'savings' | 'needs') => {
+    e.preventDefault();
+    const id = e.dataTransfer.getData('id');
+    const source = e.dataTransfer.getData('source');
+    if (source === 'WALLET') moveMoneyToBucket(id, bucket);
   };
 
   const splitMoney = (id: string) => {
@@ -272,7 +287,7 @@ export const EconomyWidget: React.FC<EconomyWidgetProps> = () => {
                                     item={item} 
                                     size="sm" 
                                     onDragStart={(e) => handleDragStart(e, item.id, 'WALLET')}
-                                    onClick={() => moveMoneyToRegister(item.id)}
+                                    onClick={() => activeMode === 'CASHIER' ? moveMoneyToRegister(item.id) : null}
                                     onDoubleClick={() => splitMoney(item.id)}
                                 />
                             ))}
@@ -438,18 +453,33 @@ export const EconomyWidget: React.FC<EconomyWidgetProps> = () => {
                             label="Nöje (Villhöver)" icon={<Icons.ShoppingCart size={24}/>} 
                             color="blue" value={budgetItems.fun} 
                             description="Godis, spel och extra prylar."
-                            onAdd={() => { if(walletTotal >= 10) { setBudgetItems({...budgetItems, fun: budgetItems.fun + 10}); setWallet(prev => prev.slice(0, -1)); }}} 
+                            viewType={viewType}
+                            onDrop={(e) => handleDropToBucket(e, 'fun')}
+                            onAdd={() => { if(walletTotal >= 10) { setBudgetItems({...budgetItems, fun: budgetItems.fun + 10}); setWallet(prev => { 
+                                // Intelligently subtract 10 from numeric total
+                                const newWallet = [...prev];
+                                let remaining = 10;
+                                // In digital mode, we just care about the total, but in physical we should consume items
+                                if (viewType === 'DIGITAL') {
+                                    // Logic for digital subtraction handled by walletTotal in display
+                                }
+                                return prev.slice(0, -1); 
+                            }); }}} 
                         />
                         <BudgetBucket 
                             label="Sparande" icon={<Icons.PiggyBank size={24}/>} 
                             color="emerald" value={budgetItems.savings}
                             description="Spara till något större."
+                            viewType={viewType}
+                            onDrop={(e) => handleDropToBucket(e, 'savings')}
                             onAdd={() => { if(walletTotal >= 10) { setBudgetItems({...budgetItems, savings: budgetItems.savings + 10}); setWallet(prev => prev.slice(0, -1)); }}}
                         />
                         <BudgetBucket 
                             label="Nödvändigt" icon={<Icons.Home size={24}/>} 
                             color="rose" value={budgetItems.needs} 
                             description="Busskort och mat."
+                            viewType={viewType}
+                            onDrop={(e) => handleDropToBucket(e, 'needs')}
                             warning={budgetItems.needs < 150 ? "Busskortet kostar 150 kr!" : undefined}
                             onAdd={() => { if(walletTotal >= 10) { setBudgetItems({...budgetItems, needs: budgetItems.needs + 10}); setWallet(prev => prev.slice(0, -1)); }}}
                         />
@@ -461,12 +491,18 @@ export const EconomyWidget: React.FC<EconomyWidgetProps> = () => {
                              <span className="text-slate-800">Planerat: {budgetItems.fun + budgetItems.savings + budgetItems.needs} kr</span>
                          </div>
                          <div className="h-6 flex rounded-full overflow-hidden shadow-sm border-2 border-white">
-                             <div className="bg-blue-500 transition-all duration-700" style={{ width: `${(budgetItems.fun / 500) * 100}%` }}></div>
-                             <div className="bg-emerald-500 transition-all duration-700" style={{ width: `${(budgetItems.savings / 500) * 100}%` }}></div>
-                             <div className="bg-rose-500 transition-all duration-700" style={{ width: `${(budgetItems.needs / 500) * 100}%` }}></div>
+                             <div className="bg-blue-500 transition-all duration-700" style={{ width: `${Math.min(100, (budgetItems.fun / 500) * 100)}%` }}></div>
+                             <div className="bg-emerald-500 transition-all duration-700" style={{ width: `${Math.min(100, (budgetItems.savings / 500) * 100)}%` }}></div>
+                             <div className="bg-rose-500 transition-all duration-700" style={{ width: `${Math.min(100, (budgetItems.needs / 500) * 100)}%` }}></div>
                              <div className="bg-slate-200 transition-all duration-700 flex-1" />
                          </div>
                     </div>
+                    
+                    {viewType === 'PHYSICAL' && walletTotal > 0 && (
+                        <p className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">
+                            Dra pengar från plånboken till rutorna ovanför för att budgetera!
+                        </p>
+                    )}
                 </div>
             )}
 
@@ -564,16 +600,28 @@ const BudgetBucket: React.FC<{
     color: 'blue' | 'emerald' | 'rose'; 
     value: number; 
     description: string;
+    viewType: ViewType;
     onAdd: () => void; 
+    onDrop: (e: React.DragEvent) => void;
     warning?: string 
-}> = ({ label, icon, color, value, description, onAdd, warning }) => {
+}> = ({ label, icon, color, value, description, viewType, onAdd, onDrop, warning }) => {
+    const [isDragOver, setIsDragOver] = useState(false);
+    
     const colors = {
         blue: 'bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-100',
         emerald: 'bg-emerald-50 border-emerald-200 text-emerald-600 hover:bg-emerald-100',
         rose: 'bg-rose-50 border-rose-200 text-rose-600 hover:bg-rose-100',
     };
+    
+    const dragOverStyles = isDragOver ? 'ring-4 ring-blue-300 border-blue-400 scale-[1.02]' : '';
+
     return (
-        <div className={`flex flex-col gap-3 p-6 rounded-[2.5rem] border-2 transition-all group ${colors[color]} relative shadow-sm hover:shadow-lg`}>
+        <div 
+            onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+            onDragLeave={() => setIsDragOver(false)}
+            onDrop={(e) => { setIsDragOver(false); onDrop(e); }}
+            className={`flex flex-col gap-3 p-6 rounded-[2.5rem] border-2 transition-all group ${colors[color]} ${dragOverStyles} relative shadow-sm hover:shadow-lg h-full`}
+        >
             <div className="flex justify-between items-start">
                 <div className="p-4 bg-white rounded-2xl shadow-sm">{icon}</div>
                 <div className="text-right">
@@ -584,12 +632,20 @@ const BudgetBucket: React.FC<{
             
             <div className="text-[10px] font-bold opacity-50 italic mb-2 leading-tight">{description}</div>
             
-            <button 
-                onClick={onAdd}
-                className="mt-auto w-full py-3 bg-white/90 hover:bg-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm active:scale-95 transition-all border border-black/5"
-            >
-                Lägg till 10 kr
-            </button>
+            {viewType === 'DIGITAL' && (
+                <button 
+                    onClick={onAdd}
+                    className="mt-auto w-full py-3 bg-white/90 hover:bg-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-sm active:scale-95 transition-all border border-black/5"
+                >
+                    Lägg till 10 kr
+                </button>
+            )}
+
+            {viewType === 'PHYSICAL' && (
+                <div className="mt-auto text-center py-2 border-t border-black/5">
+                    <span className="text-[8px] font-black uppercase opacity-40">Släpp pengar här</span>
+                </div>
+            )}
             
             {warning && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-rose-600 text-white text-[8px] font-black uppercase rounded-full shadow-lg animate-bounce whitespace-nowrap z-10">

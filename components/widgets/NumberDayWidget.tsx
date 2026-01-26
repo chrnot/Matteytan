@@ -142,7 +142,7 @@ export const NumberDayWidget: React.FC<NumberDayWidgetProps> = ({ isTransparent,
         </div>
 
         {/* Info Grid */}
-        <div className="grid grid-cols-2 gap-3 overflow-y-auto max-h-[350px] pr-1">
+        <div className="grid grid-cols-2 gap-3 overflow-y-auto max-h-[650px] pr-1">
             {getData().map((item, i) => (
                 <div 
                     key={item.label} 

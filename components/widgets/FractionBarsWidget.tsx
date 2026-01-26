@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Icons } from '../icons';
 
@@ -35,144 +36,99 @@ export const FractionBarsWidget: React.FC<FractionBarsWidgetProps> = ({ isTransp
       { id: 'init-1', denominator: 2, activeCount: 1 },
       { id: 'init-2', denominator: 4, activeCount: 2 }
   ]);
-  
   const [customNum, setCustomNum] = useState(3);
   const [customDen, setCustomDen] = useState(7);
   const [showLabels, setShowLabels] = useState(true);
   const [rulerX, setRulerX] = useState<number | null>(null);
+  const [showInfo, setShowInfo] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const addBar = (den: number, num?: number) => {
-      const newBar: FractionBar = {
-          id: Date.now().toString() + Math.random(),
-          denominator: den,
-          activeCount: num !== undefined ? num : den 
-      };
-      setBars(prev => [...prev, newBar]);
-  };
-
-  const removeBar = (id: string) => {
-      setBars(prev => prev.filter(b => b.id !== id));
-  };
-
-  const toggleSegment = (barId: string, segmentIndex: number) => {
-      setBars(prev => prev.map(bar => {
-          if (bar.id !== barId) return bar;
-          const clickedNum = segmentIndex + 1;
-          if (clickedNum === bar.activeCount) {
-              return { ...bar, activeCount: clickedNum - 1 };
-          } else {
-              return { ...bar, activeCount: clickedNum };
-          }
-      }));
+      setBars(prev => [...prev, { id: Date.now().toString() + Math.random(), denominator: den, activeCount: num ?? den }]);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
       if (!containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
       const x = e.clientX - rect.left;
-      const pct = Math.max(0, Math.min(100, (x / rect.width) * 100));
-      setRulerX(pct);
-  };
-
-  const handleMouseLeave = () => setRulerX(null);
-
-  const isMatch = (num: number, den: number) => {
-      if (rulerX === null) return false;
-      const barPct = (num / den) * 100;
-      return Math.abs(barPct - rulerX) < 1.5; 
+      setRulerX(Math.max(0, Math.min(100, (x / rect.width) * 100)));
   };
 
   return (
-    <div className="w-full h-full flex flex-col lg:flex-row gap-4 bg-white select-none">
+    <div className="w-full h-full flex flex-col lg:flex-row gap-4 bg-white select-none relative">
         
-        {/* SIDEBAR / TOPBAR */}
-        <div className="w-full lg:w-48 flex flex-row lg:flex-col gap-3 p-2 sm:p-4 bg-slate-50 border-b lg:border-r border-slate-200 overflow-x-auto lg:overflow-y-auto shrink-0">
-            
+        {/* Info Button */}
+        <button 
+          onClick={() => setShowInfo(!showInfo)}
+          className={`absolute top-0 right-0 p-2 rounded-full transition-all z-[110] ${showInfo ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+        >
+          <Icons.Info size={20} />
+        </button>
+
+        {/* Info Modal */}
+        {showInfo && (
+          <div className="absolute top-12 right-0 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 p-5 z-[120] animate-in fade-in slide-in-from-top-2 duration-300 text-left">
+            <div className="flex justify-between items-start mb-3">
+               <h4 className="font-black text-slate-800 text-sm uppercase tracking-tighter">Om Bråkstavar</h4>
+               <button onClick={() => setShowInfo(false)} className="text-slate-300 hover:text-slate-500"><Icons.Close size={16}/></button>
+            </div>
+            <div className="space-y-4 text-xs leading-relaxed text-slate-600">
+              <p>Bråkstavar används för att visualisera storleken på olika bråk och hitta likvärdiga bråk.</p>
+              <section className="space-y-2">
+                <h5 className="font-black text-blue-600 uppercase text-[10px]">Användning:</h5>
+                <ul className="space-y-1.5 list-disc pl-4">
+                  <li><strong>Hämta stav:</strong> Klicka på ett bråk i sidomenyn för att lägga till en stav i arbetsytan.</li>
+                  <li><strong>Ändra täljare:</strong> Klicka på delarna i staven för att "släcka" eller "tända" dem.</li>
+                  <li><strong>Linjal:</strong> Dra musen över arbetsytan för att se en vertikal linjal. Den hjälper dig se exakt när t.ex. 2/4 är lika stort som 1/2.</li>
+                  <li><strong>Egen stav:</strong> Skapa bråk med egna nämnare (upp till 50) i menyn till vänster.</li>
+                </ul>
+              </section>
+            </div>
+          </div>
+        )}
+
+        {/* SIDEBAR */}
+        <div className="w-full lg:w-48 flex flex-row lg:flex-col gap-3 p-2 sm:p-4 bg-slate-50 border-b lg:border-r border-slate-200 overflow-x-auto lg:overflow-y-auto shrink-0 pr-10 lg:pr-4">
             <div className="flex-1 lg:flex-none flex flex-row lg:flex-col gap-2 min-w-[140px]">
                 <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden lg:block">Hämta stav</h3>
                 <div className="grid grid-cols-5 lg:grid-cols-2 gap-1.5 flex-1">
                     {PRESETS.map(den => {
                         const colors = getBarColor(den);
-                        return (
-                            <button
-                                key={den}
-                                onClick={() => addBar(den)}
-                                className={`h-8 sm:h-10 rounded-md font-bold text-[10px] sm:text-xs shadow-sm hover:scale-105 transition-all ${colors.bg} ${colors.text} border-b-2 ${colors.border}`}
-                            >
-                                1/{den}
-                            </button>
-                        );
+                        return <button key={den} onClick={() => addBar(den)} className={`h-8 sm:h-10 rounded-md font-bold text-[10px] sm:text-xs shadow-sm hover:scale-105 transition-all ${colors.bg} ${colors.text} border-b-2 ${colors.border}`}>1/{den}</button>;
                     })}
                 </div>
             </div>
-
             <div className="hidden lg:block border-slate-200 border-b"></div>
-
-            <div className="flex-1 lg:flex-none flex flex-row lg:flex-col gap-2 items-center lg:items-stretch min-w-[140px]">
-                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden lg:block">Egen stav</h3>
-                <div className="flex items-center gap-1 bg-white p-1 rounded border border-slate-200 h-8 sm:h-10">
-                    <input type="number" min="0" max={customDen} value={customNum} onChange={e => setCustomNum(Number(e.target.value))} className="w-6 text-center font-bold text-[10px] text-slate-700 outline-none" />
-                    <span className="text-slate-300">/</span>
-                    <input type="number" min="1" max="50" value={customDen} onChange={e => setCustomDen(Number(e.target.value))} className="w-6 text-center font-bold text-[10px] text-slate-700 outline-none" />
-                </div>
-                <button onClick={() => addBar(customDen, customNum)} className="px-3 py-1 lg:py-2 bg-slate-800 text-white rounded-lg font-bold text-[10px] hover:bg-slate-700 transition-all h-8 sm:h-auto">Skapa</button>
-            </div>
-
-            <button onClick={() => setShowLabels(!showLabels)} className={`px-3 py-1 lg:py-2 rounded-lg font-bold text-[10px] border transition-all flex items-center justify-center gap-1 whitespace-nowrap h-8 sm:h-auto ${showLabels ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-slate-500 border-slate-200'}`}>
-                 <Icons.Book size={12} /> {showLabels ? 'Dölj mått' : 'Visa mått'}
-            </button>
+            <button onClick={() => setShowLabels(!showLabels)} className={`px-3 py-1 lg:py-2 rounded-lg font-bold text-[10px] border transition-all flex items-center justify-center gap-1 whitespace-nowrap h-8 sm:h-auto ${showLabels ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-slate-500 border-slate-200'}`}><Icons.Book size={12} /> {showLabels ? 'Dölj mått' : 'Visa mått'}</button>
         </div>
 
         {/* WORKSPACE */}
         <div className="flex-1 flex flex-col gap-3 p-2 sm:p-4 min-h-0">
             <div className="w-full h-8 sm:h-10 bg-red-100 border border-red-200 rounded-lg flex items-center justify-center relative shrink-0">
                 <span className="font-bold text-red-800 text-sm sm:text-base">1 (Helhet)</span>
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-slate-300"></div>
-                <div className="absolute right-0 top-0 bottom-0 w-1 bg-slate-300"></div>
             </div>
-
-            <div 
-                ref={containerRef}
-                className="flex-1 relative flex flex-col gap-2 overflow-y-auto pr-1 pb-4"
-                onMouseMove={handleMouseMove}
-                onMouseLeave={handleMouseLeave}
-            >
-                {rulerX !== null && (
-                    <div 
-                        className="absolute top-0 bottom-0 w-0.5 bg-indigo-500 z-50 pointer-events-none shadow-[0_0_8px_rgba(99,102,241,0.8)]"
-                        style={{ left: `${rulerX}%` }}
-                    >
-                        <div className="absolute -top-5 -translate-x-1/2 bg-indigo-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded">Linjal</div>
-                    </div>
-                )}
-
-                {bars.map((bar, index) => {
+            <div ref={containerRef} className="flex-1 relative flex flex-col gap-2 overflow-y-auto pr-1 pb-4" onMouseMove={handleMouseMove} onMouseLeave={() => setRulerX(null)}>
+                {rulerX !== null && <div className="absolute top-0 bottom-0 w-0.5 bg-indigo-500 z-50 pointer-events-none shadow-[0_0_8px_rgba(99,102,241,0.8)]" style={{ left: `${rulerX}%` }}><div className="absolute -top-5 -translate-x-1/2 bg-indigo-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded">Linjal</div></div>}
+                {bars.map((bar) => {
                     const colors = getBarColor(bar.denominator);
                     return (
                         <div key={bar.id} className="relative w-full h-10 sm:h-12 flex items-center group">
                             <div className="flex-1 h-full flex rounded-lg overflow-hidden shadow-sm ring-1 ring-black/5 bg-slate-100">
                                 {Array.from({ length: bar.denominator }).map((_, i) => {
                                     const isActive = i < bar.activeCount;
-                                    const match = isMatch(i + 1, bar.denominator);
+                                    const match = rulerX !== null && Math.abs(((i + 1) / bar.denominator) * 100 - rulerX) < 1.5;
                                     return (
-                                        <div 
-                                            key={i}
-                                            onClick={() => toggleSegment(bar.id, i)}
-                                            className={`flex-1 h-full border-r last:border-r-0 border-white/40 flex items-center justify-center cursor-pointer transition-colors relative ${isActive ? colors.bg : 'bg-transparent hover:bg-slate-200'}`}
-                                        >
+                                        <div key={i} onClick={() => setBars(prev => prev.map(b => b.id === bar.id ? { ...b, activeCount: i + 1 === b.activeCount ? i : i + 1 } : b))} className={`flex-1 h-full border-r last:border-r-0 border-white/40 flex items-center justify-center cursor-pointer transition-colors relative ${isActive ? colors.bg : 'bg-transparent hover:bg-slate-200'}`}>
                                             {showLabels && <span className={`text-[8px] sm:text-[10px] font-bold pointer-events-none ${isActive ? colors.text : 'text-slate-400'}`}>1/{bar.denominator}</span>}
                                             {match && <div className="absolute right-0 top-0 bottom-0 w-1 bg-indigo-400 animate-pulse z-20"></div>}
                                         </div>
                                     );
                                 })}
                             </div>
-                            <button onClick={() => removeBar(bar.id)} className="ml-2 p-1.5 text-slate-300 hover:text-red-500 transition-colors"><Icons.Trash size={14}/></button>
+                            <button onClick={() => setBars(prev => prev.filter(b => b.id !== bar.id))} className="ml-2 p-1.5 text-slate-300 hover:text-red-500 transition-colors"><Icons.Trash size={14}/></button>
                         </div>
                     );
                 })}
-
-                {bars.length === 0 && <div className="text-center py-10 text-slate-300 text-sm italic">Välj stavar ovanför.</div>}
             </div>
         </div>
     </div>

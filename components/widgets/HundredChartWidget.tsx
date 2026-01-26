@@ -29,6 +29,7 @@ export const HundredChartWidget: React.FC<HundredChartWidgetProps> = ({ isTransp
   const [activeColor, setActiveColor] = useState<number>(4); 
   const [activeMask, setActiveMask] = useState<MaskShape>('SQUARE');
   const [maskAnchor, setMaskAnchor] = useState<number>(12);
+  const [showInfo, setShowInfo] = useState(false);
 
   useEffect(() => {
     if (mode === 'MASK') setCells(prev => prev.map(c => ({ color: null, hidden: false })));
@@ -70,8 +71,38 @@ export const HundredChartWidget: React.FC<HundredChartWidgetProps> = ({ isTransp
   const maskSum = maskedIndices.reduce((sum, idx) => sum + (idx + 1), 0);
 
   return (
-    <div className="w-full h-full flex flex-col gap-2 overflow-hidden">
-        <div className="flex bg-slate-100 p-1 rounded-xl mx-auto border border-slate-200 shrink-0 text-[10px] sm:text-xs">
+    <div className="w-full h-full flex flex-col gap-2 overflow-hidden relative">
+        
+        {/* Info Button */}
+        <button 
+          onClick={() => setShowInfo(!showInfo)}
+          className={`absolute top-0 right-0 p-2 rounded-full transition-all z-[110] ${showInfo ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+        >
+          <Icons.Info size={20} />
+        </button>
+
+        {/* Info Modal */}
+        {showInfo && (
+          <div className="absolute top-12 right-0 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 p-5 z-[120] animate-in fade-in slide-in-from-top-2 duration-300 text-left">
+            <div className="flex justify-between items-start mb-3">
+               <h4 className="font-black text-slate-800 text-sm uppercase tracking-tighter">Om Hundrarutan</h4>
+               <button onClick={() => setShowInfo(false)} className="text-slate-300 hover:text-slate-500"><Icons.Close size={16}/></button>
+            </div>
+            <div className="space-y-4 text-xs leading-relaxed text-slate-600">
+              <p>Hundrarutan hjälper dig att upptäcka talmönster och samband mellan tal upp till 100.</p>
+              <section className="space-y-2">
+                <h5 className="font-black text-blue-600 uppercase text-[10px]">De tre lägena:</h5>
+                <ul className="space-y-1.5 list-disc pl-4">
+                  <li><strong>Måla:</strong> Välj en färg och markera tal. Perfekt för att visa jämna/udda tal eller multiplikationstabeller.</li>
+                  <li><strong>Gömma:</strong> Klicka på tal för att dölja dem bakom en mörk ruta. Utmana klassen att lista ut vilka tal som fattas!</li>
+                  <li><strong>Mask:</strong> Flytta en blå form över rutan. Se hur talen i formen förändras (t.ex. +10 när du går ner en rad). Summan av de markerade talen visas automatiskt.</li>
+                </ul>
+              </section>
+            </div>
+          </div>
+        )}
+
+        <div className="flex bg-slate-100 p-1 rounded-xl mx-auto border border-slate-200 shrink-0 text-[10px] sm:text-xs pr-8">
             {(['PAINT', 'HIDE', 'MASK'] as Mode[]).map(m => (
                 <button key={m} onClick={() => setMode(m)} className={`px-2 sm:px-4 py-1.5 rounded-lg font-bold transition-all ${mode === m ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}>
                     {m === 'PAINT' ? 'Måla' : m === 'HIDE' ? 'Gömma' : 'Mask'}
