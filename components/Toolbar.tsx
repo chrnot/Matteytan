@@ -66,7 +66,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   };
 
   return (
-    <div className={`fixed z-[110] flex flex-col gap-3 transition-all duration-500 ease-in-out ${
+    <div className={`fixed z-[2500] flex flex-col gap-3 transition-all duration-500 ease-in-out ${
       isMinimized 
         ? 'bottom-16 right-6 items-end' 
         : 'bottom-3 left-1/2 -translate-x-1/2 items-center w-full px-4'

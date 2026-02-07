@@ -40,7 +40,7 @@ const BACKGROUNDS: BackgroundConfig[] = [
 const AboutModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
       <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded-[2rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 border border-white/20">
         <div className="p-6 sm:p-8 overflow-y-auto custom-scrollbar">
           <div className="flex justify-between items-start mb-6">
@@ -107,7 +107,7 @@ const AboutModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen
 const CodeOfConductModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
       <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded-[2rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300 border border-white/20">
         <div className="p-6 sm:p-8 overflow-y-auto custom-scrollbar">
           <div className="flex justify-between items-start mb-6">
@@ -200,7 +200,6 @@ const App: React.FC = () => {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isCoCOpen, setIsCoCOpen] = useState(false);
   
-  // Drawing State
   const [isDrawingMode, setIsDrawingMode] = useState(false);
   const [drawColor, setDrawColor] = useState('#ef4444'); 
   const [drawWidth, setDrawWidth] = useState(4);
@@ -281,9 +280,66 @@ const App: React.FC = () => {
   const updatePosition = (id: string, x: number, y: number) => {
     setWidgets(widgets.map(w => w.id === id ? { ...w, x, y } : w));
   };
+
+  const updateSize = (id: string, width: number, height: number) => {
+    setWidgets(widgets.map(w => w.id === id ? { ...w, width, height } : w));
+  };
   
   const toggleTransparency = (id: string, isTrans: boolean) => {
       setTransparentWidgets(prev => ({ ...prev, [id]: isTrans }));
+  };
+
+  // ARRANGEMENT LOGIC
+  const arrangeWidgets = () => {
+    if (widgets.length === 0) return;
+
+    const screenW = window.innerWidth;
+    const screenH = window.innerHeight;
+    const marginT = 100;
+    const marginB = 100;
+    const marginX = 40;
+    const gap = 20;
+
+    const availableW = screenW - (marginX * 2);
+    const availableH = screenH - marginT - marginB;
+
+    let cols: number;
+    let rows: number;
+
+    const n = widgets.length;
+    if (n === 1) { cols = 1; rows = 1; }
+    else if (n === 2) { cols = 2; rows = 1; }
+    else if (n <= 4) { cols = 2; rows = 2; }
+    else if (n <= 6) { cols = 3; rows = 2; }
+    else if (n <= 9) { cols = 3; rows = 3; }
+    else { cols = 4; rows = Math.ceil(n / 4); }
+
+    const cellW = (availableW - (cols - 1) * gap) / cols;
+    const cellH = (availableH - (rows - 1) * gap) / rows;
+
+    const arrangedWidgets = widgets.map((w, index) => {
+      const col = index % cols;
+      const row = Math.floor(index / cols);
+      
+      let width = cellW;
+      let height = cellH;
+      
+      // Fine-tune for single/double windows for better aesthetics
+      if (n === 1) {
+          width = Math.min(900, availableW * 0.7);
+          height = Math.min(650, availableH * 0.7);
+      } else if (n === 2) {
+          width = Math.min(availableW * 0.45, cellW);
+          height = Math.min(availableH * 0.6, cellH);
+      }
+
+      const x = marginX + col * (cellW + gap) + (cellW - width) / 2;
+      const y = marginT + row * (cellH + gap) + (cellH - height) / 2;
+
+      return { ...w, x, y, width, height };
+    });
+
+    setWidgets(arrangedWidgets);
   };
 
   const getBackgroundClass = () => {
@@ -390,17 +446,17 @@ const App: React.FC = () => {
       
       <Logo darkMode={background === 'BLACK'} />
 
-      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-[100] flex items-start gap-2">
+      {/* Top Controls Bar */}
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-[2000] flex items-start gap-2">
          
-         {/* FEEDBACK LINK */}
-         <a 
-            href="https://docs.google.com/forms/d/e/1FAIpQLSegCGpTPfvN7R2A1WOWsDS5qZuM_JDKJiTvG1gRtCCF2l8Uvw/viewform?usp=sharing&ouid=116333036204575168879"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all font-bold text-xs sm:text-sm"
+         <button 
+            onClick={arrangeWidgets}
+            disabled={widgets.length === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all font-bold text-xs sm:text-sm disabled:opacity-30 disabled:hover:scale-100"
+            title="Ordna fönster i rutnät"
          >
-             <Icons.Feedback size={16} /> <span className="hidden md:inline">GE FEEDBACK</span>
-         </a>
+             <span className="text-lg leading-none">🧩</span> <span className="hidden md:inline uppercase tracking-widest">Ordna</span>
+         </button>
 
          <button 
             onClick={() => addWidget(WidgetType.NUMBER_OF_DAY)}
@@ -476,6 +532,7 @@ const App: React.FC = () => {
           onClose={removeWidget}
           onFocus={bringToFront}
           onMove={updatePosition}
+          onResize={updateSize}
         >
           {renderWidgetContent(widget)}
         </WidgetWrapper>
@@ -490,7 +547,7 @@ const App: React.FC = () => {
       {/* GLOBAL FOOTER ELEMENTS */}
       
       {/* Bottom Left: Creative Commons */}
-      <div className="absolute bottom-4 left-6 z-[150] pointer-events-auto flex items-center gap-2 transition-opacity duration-300 text-shadow-sm">
+      <div className="absolute bottom-4 left-6 z-[2000] pointer-events-auto flex items-center gap-2 transition-opacity duration-300 text-shadow-sm">
           <svg className="w-4 h-4 text-slate-400 opacity-80" viewBox="0 0 496 512" fill="currentColor">
             <path d="M245.83 214.87l-33.22 17.28c-9.43-19.58-25.24-19.93-27.46-19.93-22.13 0-33.22 14.61-33.22 43.89 0 23.57 9.21 43.89 33.22 43.89 20 0 33.22-14.61 33.22-43.89h33.22c0 46.14-31.09 77.12-66.44 77.12-46.92 0-66.44-32.63-66.44-77.12 0-43.55 17.28-77.12 66.44-77.12 26.74 0 53.21 10.82 66.44 35.88zm143.84 0l-33.22 17.28c-9.43-19.58-25.24-19.93-27.46-19.93-22.13 0-33.22 14.61-33.22 43.89 0 23.57 9.21 43.89 33.22 43.89 20 0 33.22-14.61 33.22-43.89h33.22c0 46.14-31.09 77.12-66.44 77.12-46.92 0-66.44-32.63-66.44-77.12 0-43.55 17.28-77.12 66.44-77.12 26.74 0 53.21 10.82 66.44 35.88zM247.7 8C104.74 8 8 123.04 8 256c0 132.96 96.74 248 239.7 248 142.96 0 248.3-115.04 248.3-248C496 123.04 390.66 8 247.7 8zm.3 450.7c-112.03 0-203-90.97-203-203s90.97-203 203-203 203 90.97 203 203-90.97 203-203 203z"/>
           </svg>
@@ -499,8 +556,8 @@ const App: React.FC = () => {
           </div>
       </div>
 
-      {/* Bottom Center: Main Links (Below Widget Menu) */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[150] flex items-center gap-6 pointer-events-auto transition-opacity duration-300">
+      {/* Bottom Center: Main Links */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[2000] flex flex-wrap justify-center items-center gap-4 sm:gap-8 pointer-events-auto transition-opacity duration-300">
           <button 
             onClick={() => setIsAboutOpen(true)}
             className="text-[10px] font-semibold tracking-[0.2em] uppercase text-slate-400 hover:text-blue-500 transition-colors cursor-pointer"
@@ -513,10 +570,18 @@ const App: React.FC = () => {
           >
             Uppförandekod
           </button>
+          <a 
+            href="https://docs.google.com/forms/d/e/1FAIpQLSegCGpTPfvN7R2A1WOWsDS5qZuM_JDKJiTvG1gRtCCF2l8Uvw/viewform?usp=sharing"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] font-bold tracking-[0.2em] uppercase text-emerald-500 hover:text-emerald-600 transition-colors flex items-center gap-1.5"
+          >
+             <Icons.Feedback size={12} /> Ge Feedback
+          </a>
       </div>
 
       {/* Bottom Right: Netlify Link */}
-      <div className="absolute bottom-4 right-6 z-[150] pointer-events-auto transition-opacity duration-300">
+      <div className="absolute bottom-4 right-6 z-[2000] pointer-events-auto transition-opacity duration-300">
           <a 
             href="https://www.netlify.com/" 
             target="_blank" 

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Icons } from './icons';
 
@@ -14,6 +15,7 @@ interface WidgetWrapperProps {
   onClose: (id: string) => void;
   onFocus: (id: string) => void;
   onMove: (id: string, x: number, y: number) => void;
+  onResize?: (id: string, width: number, height: number) => void;
 }
 
 export const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
@@ -29,6 +31,7 @@ export const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
   onClose,
   onFocus,
   onMove,
+  onResize,
 }) => {
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [size, setSize] = useState({ width: initialWidth, height: initialHeight });
@@ -39,6 +42,15 @@ export const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
   const dragStart = useRef({ x: 0, y: 0 });
   const resizeStart = useRef({ x: 0, y: 0, w: 0, h: 0 });
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Sync with props when they change (e.g. via "Arrange" function)
+  useEffect(() => {
+    if (!isDragging && !isResizing) {
+      setPosition({ x: initialX, y: initialY });
+      if (initialWidth) setSize(prev => ({ ...prev, width: initialWidth }));
+      if (initialHeight) setSize(prev => ({ ...prev, height: initialHeight }));
+    }
+  }, [initialX, initialY, initialWidth, initialHeight, isDragging, isResizing]);
 
   // --- DRAGGING LOGIC ---
   
@@ -58,24 +70,17 @@ export const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
 
   const handleTouchStart = (e: React.TouchEvent) => {
     e.stopPropagation();
-    // Prevent scrolling when starting to drag header
-    // e.preventDefault(); // Note: calling preventDefault on start might block click events on buttons, handle carefully
     const touch = e.touches[0];
     startDrag(touch.clientX, touch.clientY);
   };
 
   useEffect(() => {
     const handleMove = (clientX: number, clientY: number) => {
-        // Boundary Checks
         let newY = clientY - dragStart.current.y;
         let newX = clientX - dragStart.current.x;
 
-        // Prevent going off top screen
         if (newY < 0) newY = 0;
-        // Prevent header going completely below screen (keep 50px visible)
         if (newY > window.innerHeight - 50) newY = window.innerHeight - 50;
-        
-        // Prevent going too far left/right
         if (newX + size.width < 50) newX = 50 - size.width;
         if (newX > window.innerWidth - 50) newX = window.innerWidth - 50;
 
@@ -91,7 +96,7 @@ export const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
 
     const handleTouchMove = (e: TouchEvent) => {
       if (isDragging) {
-        e.preventDefault(); // Stop scrolling while dragging widget
+        e.preventDefault(); 
         const touch = e.touches[0];
         handleMove(touch.clientX, touch.clientY);
       }
@@ -140,7 +145,6 @@ export const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
 
   const handleResizeTouchStart = (e: React.TouchEvent) => {
       e.stopPropagation();
-      // e.preventDefault(); 
       const touch = e.touches[0];
       startResize(touch.clientX, touch.clientY);
   };
@@ -164,13 +168,18 @@ export const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
 
       const onTouchMove = (e: TouchEvent) => {
           if (!isResizing) return;
-          e.preventDefault(); // Stop scrolling while resizing
+          e.preventDefault();
           const touch = e.touches[0];
           handleResizeMove(touch.clientX, touch.clientY);
       };
 
       const onEnd = () => {
-          setIsResizing(false);
+          if (isResizing) {
+            setIsResizing(false);
+            if (onResize) {
+                onResize(id, size.width, size.height);
+            }
+          }
       };
 
       if (isResizing) {
@@ -185,30 +194,32 @@ export const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
           window.removeEventListener('touchmove', onTouchMove);
           window.removeEventListener('touchend', onEnd);
       };
-  }, [isResizing]);
+  }, [isResizing, id, onResize, size.width, size.height]);
 
 
-  // Dynamic classes
   const containerClasses = transparent 
-    ? "fixed flex flex-col rounded-xl overflow-visible transition-shadow duration-300 max-w-[98vw] max-h-[90vh]"
-    : "fixed flex flex-col bg-white rounded-xl widget-shadow border border-slate-200 overflow-hidden transition-shadow duration-300 max-w-[98vw] max-h-[90vh]";
+    ? "fixed flex flex-col rounded-xl overflow-visible transition-all duration-500 ease-in-out max-w-[98vw] max-h-[90vh]"
+    : "fixed flex flex-col bg-white rounded-xl widget-shadow border border-slate-200 overflow-hidden transition-all duration-500 ease-in-out max-w-[98vw] max-h-[90vh]";
+
+  // Disable transition during interaction
+  const dynamicStyle = {
+    left: position.x,
+    top: position.y,
+    width: transparent ? 'auto' : size.width,
+    height: transparent ? 'auto' : size.height,
+    zIndex: zIndex,
+    touchAction: 'none',
+    transition: isDragging || isResizing ? 'none' : 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)'
+  } as React.CSSProperties;
 
   return (
     <div
       ref={wrapperRef}
       className={containerClasses}
-      style={{
-        left: position.x,
-        top: position.y,
-        width: transparent ? 'auto' : size.width,
-        height: transparent ? 'auto' : size.height,
-        zIndex: zIndex,
-        touchAction: 'none' // Helps browser know we handle touches
-      }}
+      style={dynamicStyle}
       onMouseDown={() => onFocus(id)}
       onTouchStart={() => onFocus(id)}
     >
-      {/* Header */}
       {!transparent && (
         <div
           className="h-10 bg-slate-50 border-b border-slate-200 flex items-center justify-between px-3 cursor-move select-none flex-shrink-0 touch-none"
@@ -221,7 +232,6 @@ export const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
           <div className="flex items-center gap-1">
             <button
               onClick={(e) => { e.stopPropagation(); onClose(id); }}
-              onTouchEnd={(e) => { e.stopPropagation(); onClose(id); }}
               className="p-2 hover:bg-red-100 text-slate-400 hover:text-red-500 rounded transition-colors"
             >
               <Icons.Close size={18} />
@@ -230,7 +240,6 @@ export const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
         </div>
       )}
 
-      {/* Transparent Mode Drag Handle */}
       {transparent && (
          <div className="absolute -top-10 left-0 flex gap-2 bg-white/90 backdrop-blur border border-slate-200 rounded-lg p-1 shadow-sm z-50">
             <div 
@@ -250,12 +259,10 @@ export const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
          </div>
       )}
 
-      {/* Content Area */}
       <div className={`
         flex-1 relative
         ${transparent ? 'p-0 bg-transparent' : 'p-2 sm:p-4 bg-white/95 backdrop-blur-sm overflow-auto'}
       `}>
-        {/* We pass a style to force children to adapt if they use percentages */}
         <div className="h-full w-full">
             {React.Children.map(children, child => {
                 if (React.isValidElement(child)) {
@@ -267,7 +274,6 @@ export const WidgetWrapper: React.FC<WidgetWrapperProps> = ({
         </div>
       </div>
 
-      {/* Resize Handle (Bottom Right) - Made larger for touch */}
       {!transparent && (
           <div 
             className="absolute bottom-0 right-0 w-10 h-10 cursor-nwse-resize z-20 flex items-end justify-end p-1.5 hover:bg-slate-100 rounded-tl touch-none"
