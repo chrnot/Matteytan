@@ -213,35 +213,37 @@ const App: React.FC = () => {
       const screenW = window.innerWidth;
       const screenH = window.innerHeight;
       const isMobile = screenW < 768;
+      const isTablet = screenW >= 768 && screenW < 1024;
 
+      // Base clamp proportions
       const clampW = (w: number) => Math.min(w, screenW * 0.95);
       const clampH = (h: number) => Math.min(h, screenH * 0.85);
 
       switch(type) {
-          case WidgetType.NUMBER_LINE: return { w: clampW(800), h: clampH(380) };
-          case WidgetType.COORDINATES: return { w: clampW(isMobile ? 380 : 700), h: clampH(isMobile ? 550 : 500) };
-          case WidgetType.PROBABILITY: return { w: clampW(600), h: clampH(650) };
-          case WidgetType.BASE_10: return { w: clampW(850), h: clampH(550) };
-          case WidgetType.PERCENTAGE: return { w: clampW(700), h: clampH(520) };
-          case WidgetType.NUMBER_BEADS: return { w: clampW(850), h: clampH(720) };
-          case WidgetType.FRACTION: return { w: clampW(550), h: clampH(450) };
-          case WidgetType.RULER: return { w: clampW(500), h: 200 };
-          case WidgetType.PROTRACTOR: return { w: clampW(450), h: 300 };
-          case WidgetType.EQUATION: return { w: clampW(600), h: clampH(650) };
-          case WidgetType.HUNDRED_CHART: return { w: clampW(500), h: clampH(650) };
-          case WidgetType.NUMBER_OF_DAY: return { w: clampW(450), h: clampH(750) };
-          case WidgetType.FRACTION_BARS: return { w: clampW(800), h: clampH(550) };
-          case WidgetType.NUMBER_HOUSE: return { w: clampW(380), h: clampH(580) };
-          case WidgetType.CALCULATOR: return { w: clampW(360), h: clampH(580) };
-          case WidgetType.SHAPES: return { w: clampW(500), h: clampH(580) };
-          case WidgetType.MATH_WORKSHOP: return { w: clampW(850), h: clampH(600) };
-          case WidgetType.PRIME_BUBBLES: return { w: clampW(850), h: clampH(650) };
-          case WidgetType.CHANCE_GENERATOR: return { w: clampW(380), h: clampH(580) };
-          case WidgetType.CLOCK: return { w: clampW(700), h: clampH(550) };
-          case WidgetType.ECONOMY: return { w: clampW(750), h: clampH(650) };
-          case WidgetType.MULTI_MATCH: return { w: clampW(450), h: clampH(750) };
-          case WidgetType.TIERED_TASK: return { w: clampW(600), h: clampH(650) };
-          default: return { w: clampW(450), h: 400 };
+          case WidgetType.NUMBER_LINE: return { w: clampW(isMobile ? 380 : 800), h: clampH(isMobile ? 450 : 380) };
+          case WidgetType.COORDINATES: return { w: clampW(isMobile ? 380 : 700), h: clampH(isMobile ? 650 : 500) };
+          case WidgetType.PROBABILITY: return { w: clampW(isMobile ? 380 : 600), h: clampH(isMobile ? 700 : 650) };
+          case WidgetType.BASE_10: return { w: clampW(isMobile ? 380 : 850), h: clampH(isMobile ? 750 : 550) };
+          case WidgetType.PERCENTAGE: return { w: clampW(isMobile ? 380 : 700), h: clampH(isMobile ? 650 : 520) };
+          case WidgetType.NUMBER_BEADS: return { w: clampW(isMobile ? 380 : 850), h: clampH(isMobile ? 550 : 720) };
+          case WidgetType.FRACTION: return { w: clampW(isMobile ? 380 : 550), h: clampH(isMobile ? 650 : 450) };
+          case WidgetType.RULER: return { w: clampW(isMobile ? 350 : 600), h: 180 };
+          case WidgetType.PROTRACTOR: return { w: clampW(isMobile ? 350 : 450), h: 280 };
+          case WidgetType.EQUATION: return { w: clampW(isMobile ? 380 : 600), h: clampH(isMobile ? 700 : 650) };
+          case WidgetType.HUNDRED_CHART: return { w: clampW(isMobile ? 380 : 500), h: clampH(isMobile ? 600 : 650) };
+          case WidgetType.NUMBER_OF_DAY: return { w: clampW(isMobile ? 380 : 450), h: clampH(isMobile ? 700 : 750) };
+          case WidgetType.FRACTION_BARS: return { w: clampW(isMobile ? 380 : 800), h: clampH(isMobile ? 700 : 550) };
+          case WidgetType.NUMBER_HOUSE: return { w: clampW(360), h: clampH(isMobile ? 550 : 580) };
+          case WidgetType.CALCULATOR: return { w: clampW(340), h: clampH(isMobile ? 520 : 580) };
+          case WidgetType.SHAPES: return { w: clampW(isMobile ? 380 : 500), h: clampH(isMobile ? 700 : 580) };
+          case WidgetType.MATH_WORKSHOP: return { w: clampW(isMobile ? 380 : 850), h: clampH(isMobile ? 650 : 600) };
+          case WidgetType.PRIME_BUBBLES: return { w: clampW(isMobile ? 380 : 850), h: clampH(isMobile ? 650 : 650) };
+          case WidgetType.CHANCE_GENERATOR: return { w: clampW(360), h: clampH(isMobile ? 650 : 580) };
+          case WidgetType.CLOCK: return { w: clampW(isMobile ? 380 : 700), h: clampH(isMobile ? 650 : 550) };
+          case WidgetType.ECONOMY: return { w: clampW(isMobile ? 380 : 750), h: clampH(isMobile ? 800 : 650) };
+          case WidgetType.MULTI_MATCH: return { w: clampW(isMobile ? 380 : 450), h: clampH(isMobile ? 700 : 750) };
+          case WidgetType.TIERED_TASK: return { w: clampW(isMobile ? 380 : 600), h: clampH(isMobile ? 650 : 650) };
+          default: return { w: clampW(400), h: 400 };
       }
   };
 

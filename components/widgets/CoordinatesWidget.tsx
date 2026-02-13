@@ -102,7 +102,7 @@ export const CoordinatesWidget: React.FC<CoordinatesWidgetProps> = ({ isTranspar
   };
 
   return (
-    <div className="w-full h-full flex flex-col md:flex-row gap-4 overflow-hidden bg-white relative">
+    <div className="w-full h-full flex flex-col lg:flex-row gap-4 overflow-hidden bg-white relative">
       {/* Info Button */}
       <button 
         onClick={() => setShowInfo(!showInfo)}
@@ -116,7 +116,7 @@ export const CoordinatesWidget: React.FC<CoordinatesWidgetProps> = ({ isTranspar
         <div className="absolute top-12 right-0 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 p-5 z-[120] animate-in fade-in slide-in-from-top-2 duration-300 text-left">
           <div className="flex justify-between items-start mb-3">
              <h4 className="font-black text-slate-800 text-sm uppercase tracking-tighter">Om Koordinatsystemet</h4>
-             <button onClick={() => setShowInfo(false)} className="text-slate-300 hover:text-slate-500"><Icons.Close size={16}/></button>
+             <button onClick={() => setShowInfo(false)} className="text-slate-300 hover:text-slate-500"><Icons.X size={16}/></button>
           </div>
           <div className="space-y-4 text-xs leading-relaxed text-slate-600">
             <p>Här kan du plotta punkter och se hur linjer skapas genom koordinater (x, y).</p>
@@ -134,11 +134,11 @@ export const CoordinatesWidget: React.FC<CoordinatesWidgetProps> = ({ isTranspar
       )}
 
       {/* Diagram Area */}
-      <div className="flex-1 min-h-0 flex items-center justify-center p-2 relative">
+      <div className="flex-[2] min-h-0 flex items-center justify-center p-2 relative">
           <svg 
             ref={svgRef}
             viewBox={`0 0 ${CANVAS_SIZE} ${CANVAS_SIZE}`}
-            className="w-full h-full max-w-full max-h-full bg-white border-2 border-slate-200 rounded-xl shadow-sm cursor-crosshair select-none touch-none"
+            className="w-full h-full max-w-[400px] lg:max-w-full aspect-square bg-white border-2 border-slate-200 rounded-xl shadow-sm cursor-crosshair select-none touch-none"
             onClick={handleSvgClick}
           >
               {/* Grid Lines */}
@@ -186,12 +186,12 @@ export const CoordinatesWidget: React.FC<CoordinatesWidgetProps> = ({ isTranspar
       </div>
 
       {/* Sidebar - Controls & Table */}
-      <div className="h-full md:w-64 shrink-0 flex flex-col bg-slate-50 border-l border-slate-200 overflow-hidden">
+      <div className="flex-1 min-h-[200px] lg:w-64 lg:h-full shrink-0 flex flex-col bg-slate-50 border-t lg:border-t-0 lg:border-l border-slate-200 overflow-hidden">
           
           {/* Line Selection */}
           <div className="p-3 border-b border-slate-200">
               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Välj linje att rita</h3>
-              <div className="grid grid-cols-1 gap-2">
+              <div className="grid grid-cols-3 lg:grid-cols-1 gap-2">
                   {lines.map(line => {
                       const isActive = activeLineId === line.id;
                       const eq = getEquationData(line.points)?.equation;
@@ -199,16 +199,15 @@ export const CoordinatesWidget: React.FC<CoordinatesWidgetProps> = ({ isTranspar
                           <button 
                             key={line.id} 
                             onClick={() => setActiveLineId(line.id)}
-                            className={`flex flex-col p-2.5 rounded-xl border-2 transition-all text-left group ${isActive ? 'bg-white shadow-md border-blue-400' : 'bg-transparent border-transparent hover:bg-slate-100 opacity-60 hover:opacity-100'}`}
+                            className={`flex flex-col p-2 lg:p-2.5 rounded-xl border-2 transition-all text-left group ${isActive ? 'bg-white shadow-md border-blue-400' : 'bg-transparent border-transparent hover:bg-slate-100 opacity-60 hover:opacity-100'}`}
                           >
                               <div className="flex items-center justify-between w-full">
-                                  <div className="flex items-center gap-2 font-black text-xs text-slate-700">
-                                      <div className="w-3 h-3 rounded-full shadow-sm" style={{backgroundColor: line.color}}></div>
-                                      {line.name}
+                                  <div className="flex items-center gap-1 lg:gap-2 font-black text-[10px] lg:text-xs text-slate-700">
+                                      <div className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full shadow-sm" style={{backgroundColor: line.color}}></div>
+                                      <span className="truncate">{line.name}</span>
                                   </div>
-                                  {isActive && <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>}
                               </div>
-                              {eq && <div className="text-[11px] mt-1.5 font-mono font-bold text-slate-500">{eq}</div>}
+                              {eq && <div className="text-[9px] lg:text-[11px] mt-1 font-mono font-bold text-slate-500 truncate">{eq}</div>}
                           </button>
                       );
                   })}
@@ -218,12 +217,11 @@ export const CoordinatesWidget: React.FC<CoordinatesWidgetProps> = ({ isTranspar
           {/* Points Table */}
           <div className="flex-1 flex flex-col min-h-0">
                 <div className="p-3 pb-2 flex justify-between items-center bg-slate-100/50">
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Talparstabell ({activeLine.id})</h3>
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Talpar ({activeLine.id})</h3>
                     <button 
                         onClick={clearActiveLine}
                         disabled={activeLine.points.length === 0}
                         className="p-1 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded transition-colors disabled:opacity-30"
-                        title="Rensa aktiv linje"
                     >
                         <Icons.Trash size={14}/>
                     </button>
@@ -231,9 +229,9 @@ export const CoordinatesWidget: React.FC<CoordinatesWidgetProps> = ({ isTranspar
                 
                 <div className="flex-1 overflow-y-auto p-3 scrollbar-thin">
                     {activeLine.points.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center text-slate-400 text-center px-4">
-                            <Icons.Graph size={32} className="opacity-20 mb-2" />
-                            <p className="text-[10px] font-bold uppercase italic">Klicka i koordinatsystemet för att lägga till punkter</p>
+                        <div className="h-full flex flex-col items-center justify-center text-slate-400 text-center px-4 py-8">
+                            <Icons.Graph size={24} className="opacity-20 mb-2" />
+                            <p className="text-[9px] font-bold uppercase italic leading-tight">Tryck i rutnätet för att sätta punkter</p>
                         </div>
                     ) : (
                         <table className="w-full text-xs border-collapse">
@@ -245,14 +243,14 @@ export const CoordinatesWidget: React.FC<CoordinatesWidgetProps> = ({ isTranspar
                                 </tr>
                             </thead>
                             <tbody>
-                                {[...activeLine.points].sort((a,b) => a.x - b.x).map((p, idx) => (
+                                {[...activeLine.points].sort((a,b) => a.x - b.x).map((p) => (
                                     <tr key={p.id} className="border-b border-slate-100 group/row hover:bg-white transition-colors">
                                         <td className="py-2 px-3 font-mono font-bold text-slate-700">{p.x}</td>
                                         <td className="py-2 px-3 font-mono font-bold text-slate-700">{p.y}</td>
                                         <td className="py-2 px-1 text-right">
                                             <button 
                                                 onClick={() => removePoint(p.id)}
-                                                className="opacity-0 group-hover/row:opacity-100 p-1 text-slate-300 hover:text-red-500 transition-all"
+                                                className="lg:opacity-0 lg:group-hover/row:opacity-100 p-1 text-slate-300 hover:text-red-500 transition-all"
                                             >
                                                 <Icons.X size={12} />
                                             </button>
@@ -263,10 +261,6 @@ export const CoordinatesWidget: React.FC<CoordinatesWidgetProps> = ({ isTranspar
                         </table>
                     )}
                 </div>
-          </div>
-          
-          <div className="p-3 bg-white border-t border-slate-200">
-               <p className="text-[9px] text-slate-400 font-bold uppercase text-center italic tracking-tight">Klicka på en befintlig punkt för att ta bort den</p>
           </div>
       </div>
     </div>

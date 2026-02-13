@@ -62,7 +62,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
   const handleAddWidget = (type: WidgetType) => {
     onAddWidget(type);
-    setIsMinimized(true); // Auto-hide after selection to clear space
+    // Alltid fäll ihop menyn efter val för att maximera arbetsytan
+    setIsMinimized(true);
   };
 
   return (
@@ -74,15 +75,15 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       
       {/* Drawing Sub-Toolbar (Conditional) */}
       {isDrawingMode && (
-        <div className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl p-2 border-2 border-blue-500 flex items-center gap-3 animate-in slide-in-from-bottom-4 duration-300">
+        <div className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl p-2 lg:p-3 border-2 border-blue-500 flex items-center gap-2 sm:gap-3 animate-in slide-in-from-bottom-4 duration-300">
           
           {/* Color Selectors */}
-          <div className="flex gap-1.5 px-2 border-r border-slate-200">
+          <div className="flex gap-2 px-2 border-r border-slate-200">
             {COLORS.map(c => (
               <button
                 key={c.hex}
                 onClick={() => { setDrawColor(c.hex); setIsEraser(false); }}
-                className={`w-8 h-8 rounded-full border-2 transition-all ${drawColor === c.hex && !isEraser ? 'scale-110 border-slate-400 ring-2 ring-slate-100' : 'border-transparent hover:scale-105'}`}
+                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 transition-all ${drawColor === c.hex && !isEraser ? 'scale-110 border-slate-400 ring-2 ring-slate-100' : 'border-transparent hover:scale-105'}`}
                 style={{ backgroundColor: c.hex }}
                 title={c.label}
               />
@@ -90,16 +91,16 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           </div>
 
           {/* Tools: Eraser & Width */}
-          <div className="flex items-center gap-3 px-1 border-r border-slate-200 pr-3">
+          <div className="flex items-center gap-2 sm:gap-4 px-1 border-r border-slate-200 pr-2 sm:pr-4">
              <button 
                 onClick={() => setIsEraser(!isEraser)}
                 className={`p-2 rounded-lg transition-colors ${isEraser ? 'bg-blue-100 text-blue-600' : 'text-slate-400 hover:bg-slate-100'}`}
                 title="Suddgummi"
              >
-                <Icons.Eraser size={22} />
+                <Icons.Eraser size={24} />
              </button>
              
-             <div className="flex flex-col gap-1 min-w-[70px]">
+             <div className="hidden sm:flex flex-col gap-1 min-w-[70px]">
                 <input 
                   type="range" min="2" max="24" 
                   value={drawWidth}
@@ -114,18 +115,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                 title="Rensa allt"
              >
-                <Icons.Trash size={22} />
+                <Icons.Trash size={24} />
              </button>
           </div>
 
           {/* CLOSE DRAWING MODE BUTTON */}
           <button 
             onClick={() => setIsDrawingMode(false)}
-            className="flex items-center gap-2 px-3 py-2 bg-red-500 text-white rounded-xl font-black text-xs hover:bg-red-600 shadow-md active:scale-95 transition-all"
+            className="flex items-center gap-2 px-3 py-2.5 bg-red-500 text-white rounded-xl font-black text-[10px] sm:text-xs hover:bg-red-600 shadow-md active:scale-95 transition-all"
             title="Avsluta ritläge"
           >
             <Icons.X size={18} />
-            <span className="hidden sm:inline">STÄNG</span>
+            <span className="hidden sm:inline uppercase">Stäng</span>
           </button>
         </div>
       )}
@@ -137,10 +138,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           /* Minimized Trigger Button */
           <button 
             onClick={() => setIsMinimized(false)}
-            className="group flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all border-2 border-white/20 animate-in fade-in slide-in-from-right-4 duration-500"
+            className="group flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all border-2 border-white/20 animate-in fade-in slide-in-from-right-4 duration-500"
           >
-            <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors">
-              <Icons.Plus size={16} />
+            <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors">
+              <Icons.Plus size={18} />
             </div>
             <span className="text-xs font-black uppercase tracking-widest pr-1">Fler verktyg</span>
           </button>
@@ -150,21 +151,23 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             {/* Collapse handle / button */}
             <button 
                onClick={() => setIsMinimized(true)}
-               className="absolute -top-4 left-1/2 -translate-x-1/2 w-10 h-8 bg-white border-x border-t border-slate-200 rounded-t-xl flex items-center justify-center text-slate-400 hover:text-blue-500 transition-colors shadow-sm z-10"
+               className="absolute -top-5 left-1/2 -translate-x-1/2 w-12 h-10 bg-white border-x border-t border-slate-200 rounded-t-2xl flex items-center justify-center text-slate-400 hover:text-blue-500 transition-colors shadow-sm z-10"
                title="Dölj meny"
             >
-                <Icons.ChevronDown size={20} />
+                <Icons.ChevronDown size={24} />
             </button>
 
-            <div className="bg-white/90 backdrop-blur-md shadow-2xl rounded-2xl p-2 border border-slate-200 flex gap-1 sm:gap-2 items-center overflow-x-auto xl:overflow-x-visible w-full no-scrollbar justify-start xl:justify-center">
+            <div className="bg-white/90 backdrop-blur-md shadow-2xl rounded-2xl p-2 lg:p-3 border border-slate-200 flex gap-1.5 sm:gap-2.5 items-center overflow-x-auto lg:overflow-x-visible w-full no-scrollbar justify-start lg:justify-center px-4 lg:px-6">
               {WIDGET_BUTTONS.map((btn) => (
                 <button
                   key={btn.type}
                   onClick={() => handleAddWidget(btn.type)}
-                  className="flex flex-col items-center justify-center w-16 h-16 sm:w-[82px] sm:h-[82px] rounded-xl hover:bg-slate-100 transition-all text-slate-600 hover:text-blue-600 hover:scale-105 active:scale-95 group shrink-0"
+                  className="flex flex-col items-center justify-center w-16 h-16 sm:w-20 sm:h-20 lg:w-[82px] lg:h-[82px] rounded-2xl hover:bg-slate-100 transition-all text-slate-600 hover:text-blue-600 hover:scale-105 active:scale-95 group shrink-0"
                 >
-                  <btn.icon size={22} className="mb-1 group-hover:stroke-2" />
-                  <span className="text-[9px] sm:text-[10px] font-bold leading-tight text-center px-1 whitespace-nowrap uppercase tracking-tighter">{btn.label}</span>
+                  <div className="p-2.5 rounded-xl group-hover:bg-blue-50 transition-colors">
+                    <btn.icon size={26} className="group-hover:stroke-2" />
+                  </div>
+                  <span className="text-[8px] sm:text-[10px] font-black leading-tight text-center px-1 whitespace-nowrap uppercase tracking-tighter mt-0.5">{btn.label}</span>
                 </button>
               ))}
             </div>
@@ -173,7 +176,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
          {/* Status Bar */}
          {!isMinimized && (
-           <div className="flex gap-4 items-center h-6 pointer-events-none">
+           <div className="flex gap-4 items-center h-6 pointer-events-none mb-1">
               {isDrawingMode && (
                   <div className="px-3 py-1 bg-blue-600 text-white text-[9px] font-black rounded-full shadow-lg animate-pulse uppercase tracking-wider">
                      Ritläge Aktivt
