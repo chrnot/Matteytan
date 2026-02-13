@@ -46,7 +46,11 @@ import {
   Trophy,
   Lightbulb,
   MessageSquare,
-  Info
+  Info,
+  BrainCircuit,
+  LifeBuoy,
+  Settings,
+  Star
 } from 'lucide-react';
 
 export const Icons = {
@@ -97,5 +101,9 @@ export const Icons = {
   Trophy,
   Lightbulb,
   Feedback: MessageSquare,
-  Info
+  Info,
+  Brain: BrainCircuit,
+  LifeBuoy,
+  Settings,
+  Star
 };

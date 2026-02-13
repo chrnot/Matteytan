@@ -26,10 +26,10 @@ const WIDGET_BUTTONS = [
   { type: WidgetType.NUMBER_BEADS, icon: Icons.Bead, label: 'Pärlband' },
   { type: WidgetType.HUNDRED_CHART, icon: Icons.Grid, label: 'Hundrarutan' },
   { type: WidgetType.NUMBER_HOUSE, icon: Icons.Home, label: 'Tal-huset' },
+  { type: WidgetType.ECONOMY, icon: Icons.Wallet, label: 'Plånboken' },
   { type: WidgetType.FRACTION, icon: Icons.Fraction, label: 'Bråk' },
   { type: WidgetType.FRACTION_BARS, icon: Icons.Bars, label: 'Bråkstavar' },
   { type: WidgetType.PERCENTAGE, icon: Icons.Percent, label: 'Procent' },
-  { type: WidgetType.PRIME_BUBBLES, icon: Icons.Zap, label: 'Prim-Bubblor' },
   { type: WidgetType.COORDINATES, icon: Icons.Graph, label: 'Koordinater' },
   { type: WidgetType.PROBABILITY, icon: Icons.Dice, label: 'Sannolikhet' },
   { type: WidgetType.EQUATION, icon: Icons.Scale, label: 'Ekvation' },
@@ -124,7 +124,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             className="flex items-center gap-2 px-3 py-2 bg-red-500 text-white rounded-xl font-black text-xs hover:bg-red-600 shadow-md active:scale-95 transition-all"
             title="Avsluta ritläge"
           >
-            <Icons.Close size={18} />
+            <Icons.X size={18} />
             <span className="hidden sm:inline">STÄNG</span>
           </button>
         </div>

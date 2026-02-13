@@ -23,6 +23,7 @@ export enum WidgetType {
   CLOCK = 'CLOCK',
   ECONOMY = 'ECONOMY',
   MULTI_MATCH = 'MULTI_MATCH',
+  TIERED_TASK = 'TIERED_TASK',
 }
 
 export interface WidgetInstance {

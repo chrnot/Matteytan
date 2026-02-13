@@ -27,6 +27,7 @@ import { ChanceGeneratorWidget } from './components/widgets/ChanceGeneratorWidge
 import { ClockLabWidget } from './components/widgets/ClockLabWidget';
 import { EconomyWidget } from './components/widgets/EconomyWidget';
 import { MultiMatchWidget } from './components/widgets/MultiMatchWidget';
+import { TieredTaskWidget } from './components/widgets/TieredTaskWidget';
 import { Icons } from './components/icons';
 import { DrawingCanvas, DrawingCanvasHandle } from './components/DrawingCanvas';
 
@@ -48,7 +49,7 @@ const AboutModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen
               Om Matteytan – <span className="text-blue-600">Där abstrakt matematik blir konkret</span>
             </h2>
             <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors">
-              <Icons.Close size={24} />
+              <Icons.X size={24} />
             </button>
           </div>
           
@@ -115,7 +116,7 @@ const CodeOfConductModal: React.FC<{ isOpen: boolean; onClose: () => void }> = (
               Uppförandekod för <span className="text-indigo-600">Matteytan.se</span>
             </h2>
             <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors">
-              <Icons.Close size={24} />
+              <Icons.X size={24} />
             </button>
           </div>
           
@@ -239,6 +240,7 @@ const App: React.FC = () => {
           case WidgetType.CLOCK: return { w: clampW(700), h: clampH(550) };
           case WidgetType.ECONOMY: return { w: clampW(750), h: clampH(650) };
           case WidgetType.MULTI_MATCH: return { w: clampW(450), h: clampH(750) };
+          case WidgetType.TIERED_TASK: return { w: clampW(600), h: clampH(650) };
           default: return { w: clampW(450), h: 400 };
       }
   };
@@ -324,7 +326,6 @@ const App: React.FC = () => {
       let width = cellW;
       let height = cellH;
       
-      // Fine-tune for single/double windows for better aesthetics
       if (n === 1) {
           width = Math.min(900, availableW * 0.7);
           height = Math.min(650, availableH * 0.7);
@@ -382,6 +383,7 @@ const App: React.FC = () => {
       case WidgetType.CLOCK: return <ClockLabWidget />;
       case WidgetType.ECONOMY: return <EconomyWidget {...props} />;
       case WidgetType.MULTI_MATCH: return <MultiMatchWidget {...props} />;
+      case WidgetType.TIERED_TASK: return <TieredTaskWidget {...props} />;
       default: return null;
     }
   };
@@ -409,17 +411,19 @@ const App: React.FC = () => {
       case WidgetType.PRIME_BUBBLES: return 'Prim-Bubblor';
       case WidgetType.CHANCE_GENERATOR: return 'Slump-gen';
       case WidgetType.CLOCK: return 'Klock-Labbet';
-      case WidgetType.ECONOMY: return 'Ekonomi-Kollen';
+      case WidgetType.ECONOMY: return 'Plånboken';
       case WidgetType.MULTI_MATCH: return 'Multi-Matchen';
+      case WidgetType.TIERED_TASK: return 'Nivå-Kortet';
       default: return 'Verktyg';
     }
   };
 
   const EXTRA_TOOLS = [
     { type: WidgetType.MATH_WORKSHOP, icon: Icons.Tools, label: 'Verkstad' },
+    { type: WidgetType.PRIME_BUBBLES, icon: Icons.Zap, label: 'Prim-Bubblor' },
+    { type: WidgetType.TIERED_TASK, icon: Icons.Book, label: 'Nivå-Kort' },
     { type: WidgetType.MULTI_MATCH, icon: Icons.Zap, label: 'Multi-Match' },
     { type: WidgetType.CHANCE_GENERATOR, icon: Icons.Shuffle, label: 'Slump-gen' },
-    { type: WidgetType.ECONOMY, icon: Icons.Wallet, label: 'Ekonomi' },
     { type: WidgetType.CLOCK, icon: Icons.Clock, label: 'Klocka' },
     { type: WidgetType.SHAPES, icon: Icons.Shapes, label: 'Former' },
     { type: WidgetType.RULER, icon: Icons.Ruler, label: 'Linjal' },
